@@ -45,6 +45,7 @@ import androidx.navigation.compose.rememberNavController
 import com.krishnajeena.persona.screens.BlogsScreen
 import com.krishnajeena.persona.screens.BooksScreen
 import com.krishnajeena.persona.screens.NotesScreen
+import com.krishnajeena.persona.screens.TextsScreen
 import com.krishnajeena.persona.ui.theme.PersonaTheme
 import com.krishnajeena.persona.ui_layer.NoteScreen
 import com.krishnajeena.persona.ui_layer.AddNoteScreen
@@ -74,7 +75,8 @@ class MainActivity : ComponentActivity() {
 
                 val personaList = listOf(Pair("Notes", R.drawable._282),
                     Pair("Books", R.drawable._920933),
-                    Pair("Blogs", R.drawable._1242056))
+                    Pair("Blogs", R.drawable._1242056),
+                    Pair("Texts", R.drawable.comment_7945005))
 
 
                 NavHost(navController, "mainScreen",
@@ -114,6 +116,11 @@ class MainActivity : ComponentActivity() {
                         title = "Blogs"
                         BlogsScreen()
 
+                    }
+
+                    composable("texts"){
+                        title = "Texts"
+                        TextsScreen()
                     }
 
                 }
