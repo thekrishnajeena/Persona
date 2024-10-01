@@ -16,7 +16,9 @@ import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Sort
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +47,7 @@ fun NoteScreen(
             }){
                 Icon(imageVector = Icons.Rounded.Add, contentDescription = null)
             }
-        }
+        }, floatingActionButtonPosition = FabPosition.Center
     ){
 
 

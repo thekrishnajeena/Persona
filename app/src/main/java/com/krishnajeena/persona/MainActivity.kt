@@ -38,6 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -49,6 +50,7 @@ import com.krishnajeena.persona.screens.TextsScreen
 import com.krishnajeena.persona.ui.theme.PersonaTheme
 import com.krishnajeena.persona.ui_layer.NoteScreen
 import com.krishnajeena.persona.ui_layer.AddNoteScreen
+import com.krishnajeena.persona.ui_layer.BlogUrlViewModel
 import com.krishnajeena.persona.ui_layer.NoteViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -58,6 +60,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+//        val app = application as BaseClass
+//        val blogUrlViewModel = ViewModelProvider(this)[BlogUrlViewModel::class.java]
+
         setContent {
             PersonaTheme {
 
@@ -69,14 +75,15 @@ class MainActivity : ComponentActivity() {
                         TopAppBar(
                             title = { Text(title) }
                         )
-                    }
+                    },
+
                 ) {
                     innerPadding ->
 
                 val personaList = listOf(Pair("Notes", R.drawable._282),
                     Pair("Books", R.drawable._920933),
                     Pair("Blogs", R.drawable._1242056),
-                    Pair("Texts", R.drawable.comment_7945005))
+                    Pair("Texts", R.drawable.msg))
 
 
                 NavHost(navController, "mainScreen",
