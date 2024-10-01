@@ -25,26 +25,9 @@ fun NotesScreen(modifier: Modifier = Modifier) {
         val state by viewModel.state.collectAsState()
 
 
-        Column(modifier = Modifier.fillMaxSize()
-            .padding(innerPadding)){
-            val navController = rememberNavController()
-            NavHost(navController = navController,
-                startDestination = "note_screen"){
-
-                composable("note_screen"){
-
-                    NoteScreen(navController = navController,
-                        state = state,
-                        onEvent = viewModel::onEvent)
-                }
-                composable("add_noteScreen"){
-                    AddNoteScreen(navController = navController,
-                        state = state,
-                        onEvent = viewModel::onEvent)
-                }
-
-            }
-        }
-
+        NoteScreen(
+            state = state,
+            onEvent = viewModel::onEvent
+        )
     }
 }

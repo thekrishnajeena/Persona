@@ -2,6 +2,7 @@ package com.krishnajeena.persona.screens
 
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -38,6 +39,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,6 +77,7 @@ fun BlogsScreen(modifier: Modifier = Modifier,
         val blogUrlViewModel = hiltViewModel<BlogUrlViewModel>()
         //val state by blogUrlViewModel.state.collectAsState()
 
+        val context = LocalContext.current
         var selectedBlog by remember{mutableStateOf("https://www.google.com")}
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = "blogUrls"){
@@ -107,7 +110,13 @@ fun BlogsScreen(modifier: Modifier = Modifier,
 
                         OutlinedButton(onClick = {
                             if(blogName.isNotBlank() && blogUrl.isNotBlank()) {
+                                try {
                              blogUrlViewModel.addUrl(blogName, blogUrl)
+                             Toast.makeText(context, "Blog is added!", Toast.LENGTH_SHORT).show()
+                                }
+                                catch (_: Exception){
+                                    Toast.makeText(context, "Something went wrong!", Toast.LENGTH_SHORT).show()
+                                }
                             scope.launch {
                                 sheetState.hide()
                             }.invokeOnCompletion { if(!sheetState.isVisible)
