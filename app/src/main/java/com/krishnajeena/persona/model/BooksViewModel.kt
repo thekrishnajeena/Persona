@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
+import android.widget.Toast
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import java.io.File
@@ -40,8 +41,13 @@ class BooksViewModel : ViewModel() {
     }
 
     fun removePdfFromAppDirectory(context: Context, pdfUri: Uri) {
-        val contentResolver = context.contentResolver
-        contentResolver.delete(pdfUri, null, null)
+//        val contentResolver = context.contentResolver
+//        contentResolver.delete(pdfUri, null, null)
+
+        val file = pdfUri.path?.let { File(it) }
+        if (file != null) {
+            if(file.exists()) if(file.delete()) Toast.makeText(context, "File removed", Toast.LENGTH_SHORT).show()
+        }
         // Alternatively, manually remove from the file system if managing local files
     }
 

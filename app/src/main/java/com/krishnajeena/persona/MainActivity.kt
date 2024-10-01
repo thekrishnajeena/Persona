@@ -1,9 +1,14 @@
 package com.krishnajeena.persona
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -75,6 +82,41 @@ class MainActivity : ComponentActivity() {
 
                 val navBackStackEntry = navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry.value?.destination?.route
+
+                val context = LocalContext.current
+
+                // Permissions to request
+                val permissions = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                } else {
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE) // WRITE_EXTERNAL_STORAGE is deprecated in Android 10+
+                }
+
+                // Launches permission request dialog
+                val requestPermissionsLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestMultiplePermissions()
+                ) { permissionsMap ->
+                    val allGranted = permissionsMap.all { it.value }
+                    if (allGranted) {
+                        Toast.makeText(context, "All Permissions Granted", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Permissions Denied", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                // Check if permissions are already granted
+                val arePermissionsGranted = permissions.all { permission ->
+                    androidx.core.content.ContextCompat.checkSelfPermission(context, permission) ==
+                            android.content.pm.PackageManager.PERMISSION_GRANTED
+                }
+
+                // If permissions are not granted, request them at the start of the app
+                LaunchedEffect(Unit) {
+                    if (!arePermissionsGranted) {
+                        requestPermissionsLauncher.launch(permissions)
+                    }
+                }
+
                 Scaffold(
                     topBar = {
                         TopAppBar(
@@ -110,8 +152,8 @@ class MainActivity : ComponentActivity() {
                         LazyVerticalGrid(columns = GridCells.Adaptive((LocalConfiguration.current.screenWidthDp/3).dp),
                             verticalArrangement = Arrangement.Center,
                             horizontalArrangement = Arrangement.SpaceEvenly,
-                            contentPadding = PaddingValues(5.dp),
-                            modifier = Modifier.padding(10.dp)
+                            contentPadding = PaddingValues(3.dp),
+                            modifier = Modifier.padding(6.dp)
                         ) {
                             items(personaList){
                                     item ->

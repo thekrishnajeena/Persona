@@ -1,5 +1,6 @@
 package com.krishnajeena.persona.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
@@ -34,16 +35,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import com.krishnajeena.persona.GetCustomContents
 import com.krishnajeena.persona.R
@@ -54,7 +54,7 @@ import java.io.File
 fun BooksScreen(modifier: Modifier = Modifier, booksViewModel: BooksViewModel = BooksViewModel()) {
 
     val context = LocalContext.current
-    val pdfList = remember{mutableStateOf(booksViewModel.pdfList)}
+    var pdfList by remember{mutableStateOf(booksViewModel.pdfList)}
     val pdfPickerLauncher = rememberLauncherForActivityResult(
         contract = GetCustomContents(isMultiple = true),
         onResult = { uris ->
@@ -89,12 +89,13 @@ Column(modifier = Modifier
 
 booksViewModel.loadBooks(context)
     LazyColumn(modifier = Modifier.fillMaxSize()){
-        items(pdfList.value.size){
+        items(pdfList.size){
             index ->
 
            // SwipeToDismissBox() { }
             BookItem(booksViewModel.pdfList[index],
-                booksViewModel)
+                booksViewModel, index
+            ) { booksViewModel.loadBooks(context) }
         }
     }
 
@@ -108,7 +109,12 @@ booksViewModel.loadBooks(context)
 @OptIn(ExperimentalMaterial3Api::class)
 //@Preview(showSystemUi = true, showBackground = true)
 @Composable
-fun BookItem(name: File, booksViewModel: BooksViewModel=BooksViewModel()) {
+fun BookItem(
+    name: File,
+    booksViewModel: BooksViewModel = BooksViewModel(),
+    index: Int,
+    function: () -> Unit
+) {
 
     val context = LocalContext.current
     val currentItem by rememberUpdatedState(name)
@@ -117,10 +123,11 @@ fun BookItem(name: File, booksViewModel: BooksViewModel=BooksViewModel()) {
             when(it) {
                 SwipeToDismissBoxValue.StartToEnd -> {
                     //onRemove(currentItem)
-                    booksViewModel.removePdfFromAppDirectory(context, name.canonicalFile.toUri())
 
                     Toast.makeText(context, "Item deleted", Toast.LENGTH_SHORT).show()
-                }
+                    booksViewModel.removePdfFromAppDirectory(context, name.canonicalFile.toUri())
+                    booksViewModel.pdfList.remove(name)
+                    function.invoke()  }
                 SwipeToDismissBoxValue.EndToStart -> {
                     //onRemove(currentItem)
 
@@ -140,7 +147,8 @@ fun BookItem(name: File, booksViewModel: BooksViewModel=BooksViewModel()) {
         backgroundContent = {DismissBackground(dismissState)},
     ) {
 
-    Card(onClick = {Toast.makeText(context, "${name.canonicalPath}", Toast.LENGTH_LONG).show()}, modifier = Modifier.fillMaxWidth().
+    Card(onClick = {Toast.makeText(context, "${name.canonicalPath}", Toast.LENGTH_LONG).show()
+                   Log.i("TAG::", "${name}")}, modifier = Modifier.fillMaxWidth().
         padding(5.dp),
         elevation = CardDefaults.elevatedCardElevation(10.dp),
         shape = RoundedCornerShape(20)
@@ -165,7 +173,7 @@ fun BookItem(name: File, booksViewModel: BooksViewModel=BooksViewModel()) {
 @Composable
 fun DismissBackground(dismissState: SwipeToDismissBoxState) {
     val color = when (dismissState.dismissDirection) {
-        SwipeToDismissBoxValue.StartToEnd -> Color(0xFFFF1744)
+        SwipeToDismissBoxValue.StartToEnd -> Color(0xFFFF3C60)
         SwipeToDismissBoxValue.EndToStart -> Color(0xFF1DE9B6)
         SwipeToDismissBoxValue.Settled -> Color.Transparent
     }
