@@ -1,5 +1,9 @@
 package com.krishnajeena.persona.screens
 
+import android.content.ContentResolver
+import android.net.Uri
+import android.os.Environment
+import android.provider.DocumentsContract
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -13,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -36,6 +41,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,25 +50,50 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toFile
 import androidx.core.net.toUri
 import com.krishnajeena.persona.GetCustomContents
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.model.BooksViewModel
 import java.io.File
 
+private fun getFileName(contentResolver: ContentResolver, uri: Uri): String {
+    var name = ""
+    val cursor = contentResolver.query(uri, null, null, null, null)
+    cursor?.use {
+        if (it.moveToFirst()) {
+            val nameIndex = it.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+            if (nameIndex >= 0) {
+                name = it.getString(nameIndex)
+            }
+        }
+    }
+    return name
+}
+
+
 @Composable
 fun BooksScreen(modifier: Modifier = Modifier, booksViewModel: BooksViewModel = BooksViewModel()) {
 
     val context = LocalContext.current
-    var pdfList by remember{mutableStateOf(booksViewModel.pdfList)}
+    var pdfList by remember{mutableStateOf(booksViewModel.pdfList.toList())}
     val pdfPickerLauncher = rememberLauncherForActivityResult(
         contract = GetCustomContents(isMultiple = true),
         onResult = { uris ->
             uris.forEach{
                 booksViewModel.savePdfToAppDirectory(context,  it)
+         //   booksViewModel.loadBooks(context)
+            //pdfList = booksViewModel.pdfList
+                val pdfDir =
+                    File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "PersonaPdfs")
+                if (!pdfDir.exists()) pdfDir.mkdirs()
+
+                val fileName = getFileName(context.contentResolver, it)
+                val pdfFile = File(pdfDir, fileName)
+                pdfList = pdfList + pdfFile
 
             }
-            booksViewModel.loadBooks(context)
+
         }
     )
 
@@ -88,14 +119,16 @@ Column(modifier = Modifier
 
 
 booksViewModel.loadBooks(context)
+    pdfList = booksViewModel.pdfList
     LazyColumn(modifier = Modifier.fillMaxSize()){
-        items(pdfList.size){
-            index ->
+        itemsIndexed(items = pdfList, key = {index, pdf -> pdf.absolutePath}){ index, pdf ->
 
            // SwipeToDismissBox() { }
-            BookItem(booksViewModel.pdfList[index],
-                booksViewModel, index
-            ) { booksViewModel.loadBooks(context) }
+            BookItem(pdf,
+                booksViewModel, onRemove = {
+pdfList = pdfList.toMutableList().apply { removeAt(index) }
+                })
+
         }
     }
 
@@ -112,8 +145,7 @@ booksViewModel.loadBooks(context)
 fun BookItem(
     name: File,
     booksViewModel: BooksViewModel = BooksViewModel(),
-    index: Int,
-    function: () -> Unit
+    onRemove: () -> Unit
 ) {
 
     val context = LocalContext.current
@@ -124,16 +156,18 @@ fun BookItem(
                 SwipeToDismissBoxValue.StartToEnd -> {
                     //onRemove(currentItem)
 
-                    Toast.makeText(context, "Item deleted", Toast.LENGTH_SHORT).show()
+                  //  Toast.makeText(context, "Item deleted", Toast.LENGTH_SHORT).show()
                     booksViewModel.removePdfFromAppDirectory(context, name.canonicalFile.toUri())
-                    booksViewModel.pdfList.remove(name)
-                    function.invoke()  }
-                SwipeToDismissBoxValue.EndToStart -> {
-                    //onRemove(currentItem)
-
-                    Toast.makeText(context, "Item archived", Toast.LENGTH_SHORT).show()
+                    //booksViewModel.pdfList.remove(name)
+                    onRemove()
+                //    function.invoke()
                 }
+            //    SwipeToDismissBoxValue.EndToStart -> {
+                    //onRemove(currentItem)
+               //     Toast.makeText(context, "Item archived", Toast.LENGTH_SHORT).show()
+              //  }
                 SwipeToDismissBoxValue.Settled -> return@rememberSwipeToDismissBoxState false
+                else -> Unit
             }
             return@rememberSwipeToDismissBoxState true
         },
@@ -173,11 +207,12 @@ fun BookItem(
 @Composable
 fun DismissBackground(dismissState: SwipeToDismissBoxState) {
     val color = when (dismissState.dismissDirection) {
-        SwipeToDismissBoxValue.StartToEnd -> Color(0xFFFF3C60)
-        SwipeToDismissBoxValue.EndToStart -> Color(0xFF1DE9B6)
-        SwipeToDismissBoxValue.Settled -> Color.Transparent
+        SwipeToDismissBoxValue.StartToEnd -> Color(0xFFFFFFFF)
+    //    SwipeToDismissBoxValue.EndToStart -> Color(0xFF1DE9B6)
+        else  -> Color.Transparent
     }
-
+Card(modifier = Modifier.fillMaxWidth().padding(4.dp),
+    elevation = CardDefaults.elevatedCardElevation((-10).dp)){
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -190,11 +225,12 @@ fun DismissBackground(dismissState: SwipeToDismissBoxState) {
             Icons.Default.Delete,
             contentDescription = "delete"
         )
-        Spacer(modifier = Modifier)
-        Icon(
-            // make sure add baseline_archive_24 resource to drawable folder
-            painter = painterResource(R.drawable.ic_launcher_background),
-            contentDescription = "Archive"
-        )
+//        Spacer(modifier = Modifier)
+//        Icon(
+//            // make sure add baseline_archive_24 resource to drawable folder
+//            painter = painterResource(R.drawable.ic_launcher_background),
+//            contentDescription = "Archive"
+//        )
     }
+}
 }
