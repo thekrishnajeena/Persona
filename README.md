@@ -1,4 +1,4 @@
-**Persona**
+## Persona
 
 Persona is a personal project designed to bring together everything essential in one app, aiming to make you distraction-free. Whether it’s capturing moments, storing important documents, jotting down notes, or curating blogs for focused reading, xyz allows you to organize it all in one place.
 
