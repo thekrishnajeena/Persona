@@ -91,6 +91,7 @@ dependencies {
 
     implementation(libs.hilt.navigation.compose)
     implementation(libs.androidx.room.ktx)
+    implementation("io.coil-kt:coil-compose:2.4.0")
 
     implementation ("androidx.webkit:webkit:1.7.0")
     implementation ("androidx.compose.material3:material3:1.0.0")

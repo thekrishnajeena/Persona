@@ -1,15 +1,21 @@
 package com.krishnajeena.persona
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -55,6 +61,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.krishnajeena.persona.screens.BlogsScreen
 import com.krishnajeena.persona.screens.BooksScreen
+import com.krishnajeena.persona.screens.DailyCameraScreen
 import com.krishnajeena.persona.screens.NotesScreen
 import com.krishnajeena.persona.screens.TextsScreen
 import com.krishnajeena.persona.ui.theme.PersonaTheme
@@ -63,6 +70,9 @@ import com.krishnajeena.persona.ui_layer.AddNoteScreen
 import com.krishnajeena.persona.ui_layer.BlogUrlViewModel
 import com.krishnajeena.persona.ui_layer.NoteViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -138,7 +148,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                     innerPadding ->
 
-                val personaList = listOf(Pair("Notes", R.drawable._282),
+                val personaList = listOf(
+                    Pair("Clicks", R.drawable._8037),
+                    Pair("Notes", R.drawable._282),
                     Pair("Books", R.drawable._920933),
                     Pair("Blogs", R.drawable._1242056),
                     Pair("Texts", R.drawable.msg))
@@ -147,13 +159,21 @@ class MainActivity : ComponentActivity() {
                 NavHost(navController, "mainScreen",
                     Modifier.padding(innerPadding)){
 
+                    composable("clicks"){
+
+                        title = "Clicks"
+                        DailyCameraScreen()
+
+                    }
+
                     composable("mainScreen"){
                         title = "Persona"
-                        LazyVerticalGrid(columns = GridCells.Adaptive((LocalConfiguration.current.screenWidthDp/3).dp),
+                        LazyVerticalGrid(columns = GridCells.Fixed(2),
                             verticalArrangement = Arrangement.Center,
                             horizontalArrangement = Arrangement.SpaceEvenly,
-                            contentPadding = PaddingValues(3.dp),
-                            modifier = Modifier.padding(6.dp)
+                            contentPadding = PaddingValues(2.dp),
+                            modifier = Modifier.padding(3.dp)
+
                         ) {
                             items(personaList){
                                     item ->
@@ -198,13 +218,47 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun PersonaItem(name: Pair<String, Int> = Pair("", 0), navController: NavController = rememberNavController()) {
 
+    val context = LocalContext.current
     Column(horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize().height(200.dp)
-            .padding(10.dp)){
+            .padding(5.dp)){
+        if(name.first == "Clicks"){
+            var capturedImage by remember { mutableStateOf<Bitmap?>(null) }
+            val cameraLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.TakePicturePreview()
+            ) {
+                    bitmap ->
+                if(bitmap != null){
+                    capturedImage = bitmap
+                    saveImageToPersona(context, capturedImage!!)
+                }
+            }
+            Card(modifier = Modifier.fillMaxSize(0.8f)
+                .combinedClickable (
+                    onClick = {
+                       cameraLauncher.launch(null)
+                              }
+                    , onLongClick = {
+                        navController.navigate(name.first.lowercase())
+                    }
+                )
+
+            ){
+
+                Image(painter = painterResource(name.second),
+                    contentDescription = null, contentScale = ContentScale.Crop,
+                    alignment = Alignment.Center)
+
+            }
+            Text(text = name.first, fontSize = 20.sp)
+
+        }
+        else{
     Card(modifier = Modifier.fillMaxSize(0.8f),
         onClick = {navController.navigate(name.first.lowercase())}){
 
@@ -215,17 +269,28 @@ fun PersonaItem(name: Pair<String, Int> = Pair("", 0), navController: NavControl
     }
 Text(text = name.first, fontSize = 20.sp)
     }
+        }
 
 }
 
+fun saveImageToPersona(context: Context, capturedImage: Bitmap) {
 
-//
-//sealed class Screen(){
-//
-//    @Serializable
-//    object NoteScreen
-//
-//    @Serializable
-//    object AddNoteScreen
-//
-//}
+    val folder = File(context.getExternalFilesDir(null), "PersonaClicks")
+    if(!folder.exists()){
+        folder.mkdirs()
+    }
+
+    val filename = "IMG_${System.currentTimeMillis()}.jpg"
+    val file = File(folder, filename)
+
+    try {
+        val outputStream = FileOutputStream(file)
+        capturedImage.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+        outputStream.flush()
+        outputStream.close()
+        Toast.makeText(context, "Image Saved", Toast.LENGTH_SHORT).show()
+    } catch (e: IOException){
+        e.printStackTrace()
+    }
+
+}

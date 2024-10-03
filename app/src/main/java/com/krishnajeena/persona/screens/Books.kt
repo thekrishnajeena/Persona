@@ -166,7 +166,7 @@ fun BookItem(
                     //onRemove(currentItem)
                //     Toast.makeText(context, "Item archived", Toast.LENGTH_SHORT).show()
               //  }
-                SwipeToDismissBoxValue.Settled -> return@rememberSwipeToDismissBoxState false
+               // SwipeToDismissBoxValue.Settled -> return@rememberSwipeToDismissBoxState false
                 else -> Unit
             }
             return@rememberSwipeToDismissBoxState true
@@ -178,6 +178,8 @@ fun BookItem(
     SwipeToDismissBox(
         state = dismissState,
         modifier = Modifier,
+enableDismissFromStartToEnd = true,
+        enableDismissFromEndToStart = false,
         backgroundContent = {DismissBackground(dismissState)},
     ) {
 
@@ -225,12 +227,7 @@ Card(modifier = Modifier.fillMaxWidth().padding(4.dp),
             Icons.Default.Delete,
             contentDescription = "delete"
         )
-//        Spacer(modifier = Modifier)
-//        Icon(
-//            // make sure add baseline_archive_24 resource to drawable folder
-//            painter = painterResource(R.drawable.ic_launcher_background),
-//            contentDescription = "Archive"
-//        )
+
     }
 }
 }
