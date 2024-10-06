@@ -61,6 +61,9 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.cardview)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -96,6 +99,8 @@ dependencies {
     implementation ("androidx.webkit:webkit:1.7.0")
     implementation ("androidx.compose.material3:material3:1.0.0")
 
+    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.33.2-alpha")
+    implementation ("androidx.media3:media3-exoplayer:1.1.1")
 
 
 }

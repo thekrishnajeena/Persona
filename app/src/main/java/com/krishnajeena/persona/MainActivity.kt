@@ -13,6 +13,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
@@ -62,6 +63,7 @@ import androidx.navigation.compose.rememberNavController
 import com.krishnajeena.persona.screens.BlogsScreen
 import com.krishnajeena.persona.screens.BooksScreen
 import com.krishnajeena.persona.screens.DailyCameraScreen
+import com.krishnajeena.persona.screens.MusicScreen
 import com.krishnajeena.persona.screens.NotesScreen
 import com.krishnajeena.persona.screens.TextsScreen
 import com.krishnajeena.persona.ui.theme.PersonaTheme
@@ -76,6 +78,7 @@ import java.io.IOException
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -150,6 +153,7 @@ class MainActivity : ComponentActivity() {
 
                 val personaList = listOf(
                     Pair("Clicks", R.drawable._8037),
+                    Pair("Music", R.drawable.v790_nunny_37),
                     Pair("Notes", R.drawable._282),
                     Pair("Books", R.drawable._920933),
                     Pair("Blogs", R.drawable._1242056),
@@ -164,6 +168,10 @@ class MainActivity : ComponentActivity() {
                         title = "Clicks"
                         DailyCameraScreen()
 
+                    }
+
+                    composable("music"){
+                    MusicScreen()
                     }
 
                     composable("mainScreen"){
@@ -224,6 +232,15 @@ class MainActivity : ComponentActivity() {
 fun PersonaItem(name: Pair<String, Int> = Pair("", 0), navController: NavController = rememberNavController()) {
 
     val context = LocalContext.current
+    var navB by remember { mutableStateOf(false) }
+
+    if(navB){
+        LaunchedEffect(Unit) {
+            navController.navigate(name.first.lowercase())
+            navB = false
+        }
+    }
+
     Column(horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize().height(200.dp)
             .padding(5.dp)){
@@ -260,7 +277,12 @@ fun PersonaItem(name: Pair<String, Int> = Pair("", 0), navController: NavControl
         }
         else{
     Card(modifier = Modifier.fillMaxSize(0.8f),
-        onClick = {navController.navigate(name.first.lowercase())}){
+        onClick = {
+
+        //    navController.navigate(name.first.lowercase())
+            navB = true
+
+        }){
 
         Image(painter = painterResource(name.second),
             contentDescription = null, contentScale = ContentScale.Crop,

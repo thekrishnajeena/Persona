@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -73,25 +74,17 @@ private fun getFileName(contentResolver: ContentResolver, uri: Uri): String {
 
 
 @Composable
-fun BooksScreen(modifier: Modifier = Modifier, booksViewModel: BooksViewModel = BooksViewModel()) {
+fun BooksScreen(modifier: Modifier = Modifier) {
 
     val context = LocalContext.current
-    var pdfList by remember{mutableStateOf(booksViewModel.pdfList.toList())}
+    val booksViewModel = BooksViewModel(context)
+
+    val bookList by booksViewModel.pdfList.observeAsState(emptyList())
     val pdfPickerLauncher = rememberLauncherForActivityResult(
         contract = GetCustomContents(isMultiple = true),
         onResult = { uris ->
             uris.forEach{
                 booksViewModel.savePdfToAppDirectory(context,  it)
-         //   booksViewModel.loadBooks(context)
-            //pdfList = booksViewModel.pdfList
-                val pdfDir =
-                    File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "PersonaPdfs")
-                if (!pdfDir.exists()) pdfDir.mkdirs()
-
-                val fileName = getFileName(context.contentResolver, it)
-                val pdfFile = File(pdfDir, fileName)
-                pdfList = pdfList + pdfFile
-
             }
 
         }
@@ -117,16 +110,13 @@ Column(modifier = Modifier
     .fillMaxSize()
    ){
 
-
-booksViewModel.loadBooks(context)
-    pdfList = booksViewModel.pdfList
-    LazyColumn(modifier = Modifier.fillMaxSize()){
-        itemsIndexed(items = pdfList, key = {index, pdf -> pdf.absolutePath}){ index, pdf ->
+   LazyColumn(modifier = Modifier.fillMaxSize()){
+        itemsIndexed(items = bookList, key = {_, book -> book.absolutePath}){ _, book ->
 
            // SwipeToDismissBox() { }
-            BookItem(pdf,
+            BookItem(book,
                 booksViewModel, onRemove = {
-pdfList = pdfList.toMutableList().apply { removeAt(index) }
+booksViewModel.removePdfFromAppDirectory(context, book.toUri())
                 })
 
         }
@@ -144,12 +134,11 @@ pdfList = pdfList.toMutableList().apply { removeAt(index) }
 @Composable
 fun BookItem(
     name: File,
-    booksViewModel: BooksViewModel = BooksViewModel(),
+    booksViewModel: BooksViewModel,
     onRemove: () -> Unit
 ) {
 
     val context = LocalContext.current
-    val currentItem by rememberUpdatedState(name)
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = {
             when(it) {
@@ -159,7 +148,7 @@ fun BookItem(
                   //  Toast.makeText(context, "Item deleted", Toast.LENGTH_SHORT).show()
                     booksViewModel.removePdfFromAppDirectory(context, name.canonicalFile.toUri())
                     //booksViewModel.pdfList.remove(name)
-                    onRemove()
+                   // onRemove()
                 //    function.invoke()
                 }
             //    SwipeToDismissBoxValue.EndToStart -> {
@@ -183,8 +172,8 @@ enableDismissFromStartToEnd = true,
         backgroundContent = {DismissBackground(dismissState)},
     ) {
 
-    Card(onClick = {Toast.makeText(context, "${name.canonicalPath}", Toast.LENGTH_LONG).show()
-                   Log.i("TAG::", "${name}")}, modifier = Modifier.fillMaxWidth().
+    Card(onClick = {Toast.makeText(context, name.canonicalPath, Toast.LENGTH_LONG).show()
+                   Log.i("TAG::", "$name")}, modifier = Modifier.fillMaxWidth().
         padding(5.dp),
         elevation = CardDefaults.elevatedCardElevation(10.dp),
         shape = RoundedCornerShape(20)

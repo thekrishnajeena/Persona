@@ -7,18 +7,28 @@ import android.os.Environment
 import android.provider.DocumentsContract
 import android.widget.Toast
 import androidx.compose.runtime.mutableStateListOf
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 
-class BooksViewModel : ViewModel() {
+class BooksViewModel(context: Context) : ViewModel() {
 
+    private val _pdfList = MutableLiveData<List<File>>(emptyList())
+    val pdfList : LiveData<List<File>> get() = _pdfList
 
-    val pdfList = mutableStateListOf<File>()
-
+    init{
+        viewModelScope.launch {
+            _pdfList.value = loadBooks(context)
+        }
+    }
     fun savePdfToAppDirectory(context: Context, pdfUri: Uri) {
+        viewModelScope.launch{
         val contentResolver = context.contentResolver
         val inputStream = contentResolver.openInputStream(pdfUri)
 
@@ -29,24 +39,38 @@ class BooksViewModel : ViewModel() {
         val fileName = getFileName(contentResolver, pdfUri)
         val pdfFile = File(pdfDir, fileName)
 
-        inputStream?.use { input ->
-            FileOutputStream(pdfFile).use { output ->
+        if(pdfFile.exists()){
+            Toast.makeText(context, "This is already in!", Toast.LENGTH_SHORT).show();
 
-                copyFile(input, output)
-
-            }
         }
+else {
+            inputStream?.use { input ->
+                FileOutputStream(pdfFile).use { output ->
 
+                    copyFile(input, output)
 
+                }
+            }
+
+            _pdfList.value = loadBooks(context)
+        }
+        }
     }
 
     fun removePdfFromAppDirectory(context: Context, pdfUri: Uri) {
 //        val contentResolver = context.contentResolver
 //        contentResolver.delete(pdfUri, null, null)
 
+        viewModelScope.launch{
         val file = pdfUri.path?.let { File(it) }
         if (file != null) {
-            if(file.exists()) if(file.delete()) Toast.makeText(context, "File removed", Toast.LENGTH_SHORT).show()
+            if(file.exists()) {
+                _pdfList.value = _pdfList.value?.filter{it != file}
+                if (file.delete()) Toast.makeText(context, "File removed", Toast.LENGTH_SHORT)
+                    .show()
+
+            }
+        }
         }
         // Alternatively, manually remove from the file system if managing local files
     }
@@ -68,22 +92,24 @@ class BooksViewModel : ViewModel() {
 
     // Helper function to copy the file from input stream to output stream
     private fun copyFile(input: InputStream, output: OutputStream) {
+      viewModelScope.launch{
+
         val buffer = ByteArray(1024)
         var length: Int
         while (input.read(buffer).also { length = it } > 0) {
             output.write(buffer, 0, length)
         }
+      }
     }
 
-    fun loadBooks(context: Context){
+    fun loadBooks(context: Context) : List<File> {
+
         val pdfDir =
             File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "PersonaPdfs")
         if(pdfDir.exists()){
-            pdfDir.listFiles()?.forEach {
-                files ->
-                pdfList.add(files)
-            }
+            return pdfDir.listFiles()?.toList() ?: emptyList()
         }
+        return emptyList()
     }
 
 }

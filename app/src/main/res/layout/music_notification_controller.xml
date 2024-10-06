@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rlNotification"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="10dp">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardMusic"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="10dp">
+
+        <ImageView
+            android:id="@+id/album_art"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:src="@drawable/v790_nunny_37" />
+    </androidx.cardview.widget.CardView>
+
+    <TextView
+        android:id="@+id/song_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_toEndOf="@id/cardMusic"
+        android:text="Song Title"
+        android:textColor="#000"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/song_artist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/song_title"
+        android:layout_marginStart="10dp"
+        android:layout_toEndOf="@id/cardMusic"
+        android:text="Artist"
+        android:textColor="#666"
+        android:textSize="14sp" />
+
+    <!-- Play button -->
+    <ImageButton
+        android:id="@+id/play_pause_button"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_alignParentEnd="true"
+        android:background="#000000"
+        android:src="@android:drawable/ic_media_pause" />
+
+    <!-- Next button -->
+    <ImageButton
+        android:id="@+id/next_button"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_toStartOf="@id/play_pause_button"
+        android:background="#000000"
+        android:src="@android:drawable/ic_media_next" />
+
+</RelativeLayout>
