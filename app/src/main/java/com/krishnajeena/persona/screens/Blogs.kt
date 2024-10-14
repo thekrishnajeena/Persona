@@ -5,6 +5,7 @@ import android.net.Uri
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,6 +64,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.krishnajeena.persona.R
 import com.krishnajeena.persona.data_layer.BlogUrl
 import com.krishnajeena.persona.data_layer.BlogUrlRepository
 import com.krishnajeena.persona.ui_layer.BlogUrlViewModel
@@ -95,7 +98,8 @@ fun BlogsScreen(modifier: Modifier = Modifier,
 
         val context = LocalContext.current
         val navController = rememberNavController()
-        NavHost(navController = navController, startDestination = "blogUrls"){
+
+        NavHost(navController = navController, startDestination = "blogUrls", modifier = Modifier.fillMaxSize()){
 
         composable("blogUrls"){
             if(showBottomSheet){
@@ -148,18 +152,22 @@ fun BlogsScreen(modifier: Modifier = Modifier,
 
             }
 
-        LazyColumn(modifier = Modifier.fillMaxSize()){
+            if(blogUrlViewModel.isEmpty()){
+                Image(painter = painterResource(R.drawable.undraw_blog_post_re_fy5x), contentDescription = null)
+            }
+else{
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
 
-            items(blogUrlViewModel.urls){
-                item ->
+            items(blogUrlViewModel.urls) { item ->
 
-             BlogsItem(item = item,
-                 blogUrlViewModel = blogUrlViewModel,
-                 navController = navController,
-                 )
+                BlogsItem(
+                    item = item,
+                    blogUrlViewModel = blogUrlViewModel,
+                    navController = navController,
+                )
             }
 
-
+        }
         }
         }
 

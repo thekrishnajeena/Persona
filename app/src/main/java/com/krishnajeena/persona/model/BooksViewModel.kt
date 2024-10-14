@@ -28,7 +28,7 @@ class BooksViewModel(context: Context) : ViewModel() {
         }
     }
     fun savePdfToAppDirectory(context: Context, pdfUri: Uri) {
-        viewModelScope.launch{
+     //   viewModelScope.launch{
         val contentResolver = context.contentResolver
         val inputStream = contentResolver.openInputStream(pdfUri)
 
@@ -54,7 +54,7 @@ else {
 
             _pdfList.value = loadBooks(context)
         }
-        }
+      //  }
     }
 
     fun removePdfFromAppDirectory(context: Context, pdfUri: Uri) {

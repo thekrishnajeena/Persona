@@ -102,7 +102,8 @@ dependencies {
     implementation ("com.google.accompanist:accompanist-systemuicontroller:0.33.2-alpha")
     implementation ("androidx.media3:media3-exoplayer:1.1.1")
 
-
+    implementation ("androidx.navigation:navigation-compose:2.4.0-alpha10")
+    implementation ("androidx.media:media:1.6.0")
 }
 
 

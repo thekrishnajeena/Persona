@@ -157,7 +157,8 @@ class MainActivity : ComponentActivity() {
                     Pair("Notes", R.drawable._282),
                     Pair("Books", R.drawable._920933),
                     Pair("Blogs", R.drawable._1242056),
-                    Pair("Texts", R.drawable.msg))
+                //    Pair("Texts", R.drawable.msg)
+                )
 
 
                 NavHost(navController, "mainScreen",
@@ -211,10 +212,10 @@ class MainActivity : ComponentActivity() {
 
                     }
 
-                    composable("texts"){
-                        title = "Texts"
-                        TextsScreen()
-                    }
+//                    composable("texts"){
+//                        title = "Texts"
+//                        TextsScreen()
+//                    }
 
                 }
 

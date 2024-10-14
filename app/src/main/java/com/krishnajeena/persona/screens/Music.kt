@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,11 +46,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -87,6 +83,8 @@ fun MusicScreen(modifier: Modifier = Modifier) {
     }
 }
 
+
+
 @RequiresApi(Build.VERSION_CODES.O)
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
@@ -95,7 +93,7 @@ fun MusicListScreen(modifier: Modifier = Modifier, navController: NavController)
     val context = LocalContext.current
     val musicViewModel = MusicUrlViewModel(context)
 
-    val musicModel = MusicViewModel()
+val musicModel : MusicViewModel = hiltViewModel()
 
     val musicList by musicViewModel.musicList.observeAsState(emptyList())
 
@@ -117,7 +115,9 @@ fun MusicListScreen(modifier: Modifier = Modifier, navController: NavController)
 
     Scaffold(modifier = Modifier
         .fillMaxSize(),
-        floatingActionButton = {FloatingActionButton(
+        floatingActionButtonPosition = FabPosition.Center,
+        floatingActionButton = {
+            FloatingActionButton(
             onClick = {
                // showBottomSheet = true
                 musicPickerLauncher.launch(("audio/*"))
@@ -127,23 +127,35 @@ fun MusicListScreen(modifier: Modifier = Modifier, navController: NavController)
             modifier = Modifier.padding(10.dp)
         ){Icon(imageVector = Icons.Default.Add, contentDescription = null)
         }
-        }, floatingActionButtonPosition = FabPosition.Center,
+        },
      ) { innerPadding ->
 
 
-        Box(modifier = Modifier.fillMaxSize().padding(PaddingValues(bottom = innerPadding.calculateBottomPadding()))){
+        Box(modifier = Modifier.fillMaxSize().padding(PaddingValues(bottom = innerPadding.calculateBottomPadding()))) {
 
-        LazyColumn(modifier = Modifier.fillMaxWidth().padding(2.dp), verticalArrangement = Arrangement.spacedBy(5.dp)){
-            itemsIndexed(items = musicList, key = {_, music -> music.absolutePath}){
-                _, music ->
-MusicItem(name = music, musicViewModel = musicViewModel, musicModel = musicModel)
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().padding(2.dp),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                itemsIndexed(
+                    items = musicList,
+                    key = { _, music -> music.absolutePath }) { _, music ->
+                    MusicItem(
+                        name = music,
+                        musicViewModel = musicViewModel,
+                        musicModel = musicModel
+                    )
 
 
+                }
             }
-        }
-
-            BottomPlaybackController(currentSong, modifier = Modifier.align(Alignment.BottomCenter), isPlaying,
-                onPlay = {musicModel.playMusic( context, currentSongUri!!)}, onPauseClick = { musicModel.pauseMusic(context) })
+           // if (isPlaying) {
+                BottomPlaybackController(currentSong,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    isPlaying,
+                    onPlay = { musicModel.playMusic(context, currentSongUri!!, false) },
+                    onPauseClick = { musicModel.pauseMusic(context) })
+           // }
         }
         }
 }
@@ -177,7 +189,8 @@ fun BottomPlaybackController(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MusicItem(modifier: Modifier = Modifier, name: File, musicViewModel: MusicUrlViewModel,
-              musicModel : MusicViewModel) {
+              musicModel : MusicViewModel= hiltViewModel()
+) {
 
     val context = LocalContext.current
     val dismissState = rememberSwipeToDismissBoxState(
@@ -185,25 +198,14 @@ fun MusicItem(modifier: Modifier = Modifier, name: File, musicViewModel: MusicUr
             when(it) {
                 SwipeToDismissBoxValue.StartToEnd -> {
                     musicViewModel.removeMusic(name)
-                  //  onRemove()
-                    //    function.invoke()
                 }
-                //    SwipeToDismissBoxValue.EndToStart -> {
-                //onRemove(currentItem)
-                //     Toast.makeText(context, "Item archived", Toast.LENGTH_SHORT).show()
-                //  }
-                // SwipeToDismissBoxValue.Settled -> return@rememberSwipeToDismissBoxState false
                 else -> Unit
             }
             return@rememberSwipeToDismissBoxState true
         },
-        // positional threshold of 25%
         positionalThreshold = { it * .25f }
     )
-//    val serviceIntent = Intent(context, MusicService::class.java).apply {
-//        action = MusicService.ACTION_PLAY
-//        putExtra(MusicService.EXTRA_MUSIC_URI, name.toUri().toString()) // Pass the URI of the music
-//    }
+
     SwipeToDismissBox(
         state = dismissState,
         modifier = Modifier,
@@ -214,7 +216,9 @@ fun MusicItem(modifier: Modifier = Modifier, name: File, musicViewModel: MusicUr
 
         Card(
             onClick = {
-musicModel.playMusic(context, name.toUri())
+                musicModel.updatePlaybackPosition(0L)
+
+musicModel.playMusic(context, name.toUri(), true)
                       }, modifier = Modifier
                 .fillMaxWidth()
                 .padding(5.dp),
@@ -236,20 +240,6 @@ musicModel.playMusic(context, name.toUri())
         }
 
     }
-}
-
-@androidx.annotation.OptIn(UnstableApi::class)
-@Composable
-fun ExoPlayerView(exoPlayer : ExoPlayer) {
-
-    AndroidView(factory = {
-        PlayerView(it).apply{
-            player = exoPlayer
-
-            hideController()
-        }
-    }, modifier = Modifier.fillMaxWidth().height(200.dp))
-    
 }
 
 @Composable

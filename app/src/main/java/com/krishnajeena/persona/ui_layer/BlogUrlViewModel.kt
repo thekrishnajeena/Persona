@@ -41,4 +41,8 @@ class BlogUrlViewModel @Inject constructor(
         }
     }
 
+    fun isEmpty(): Boolean{
+        return urls.isEmpty()
+    }
+
 }
