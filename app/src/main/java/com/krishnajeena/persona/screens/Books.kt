@@ -47,15 +47,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toFile
 import androidx.core.net.toUri
+import androidx.navigation.NavController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.krishnajeena.persona.GetCustomContents
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.model.BooksViewModel
+import com.rajat.pdfviewer.compose.PdfRendererViewCompose
 import java.io.File
 
 private fun getFileName(contentResolver: ContentResolver, uri: Uri): String {
@@ -110,17 +119,44 @@ Column(modifier = Modifier
     .fillMaxSize()
    ){
 
-   LazyColumn(modifier = Modifier.fillMaxSize()){
-        itemsIndexed(items = bookList, key = {_, book -> book.absolutePath}){ _, book ->
+    val navController = rememberNavController()
 
-           // SwipeToDismissBox() { }
-            BookItem(book,
-                booksViewModel, onRemove = {
-booksViewModel.removePdfFromAppDirectory(context, book.toUri())
-                })
+    NavHost(navController, "listBook"){
+        composable("listBook"){
 
+//            if(booksViewModel.isEmpty()){
+//                Image(painter = painterResource(R.drawable.collection_of_books_showing_concept_of_library),
+//                    contentDescription = null)
+//            }else {
+
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    itemsIndexed(
+                        items = bookList,
+                        key = { _, book -> book.absolutePath }) { _, book ->
+
+                        // SwipeToDismissBox() { }
+                        BookItem(book,
+                            booksViewModel, onRemove = {
+                                booksViewModel.removePdfFromAppDirectory(context, book.toUri())
+                            }, navController
+                        )
+
+                    }
+                }
+            //}
+        }
+        composable("bookOpen/{bookName}",
+            arguments = listOf(navArgument("bookName"){
+                type = NavType.StringType
+            })){
+            backStackEntry ->
+            val bookName = backStackEntry.arguments?.getString("bookName")
+            if (bookName != null) {
+                PersonaPdfViewer(url = bookName)
+            }
         }
     }
+
 
 
 }
@@ -135,7 +171,8 @@ booksViewModel.removePdfFromAppDirectory(context, book.toUri())
 fun BookItem(
     name: File,
     booksViewModel: BooksViewModel,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    navController: NavController
 ) {
 
     val context = LocalContext.current
@@ -143,20 +180,9 @@ fun BookItem(
         confirmValueChange = {
             when(it) {
                 SwipeToDismissBoxValue.StartToEnd -> {
-                    //onRemove(currentItem)
-
-                  //  Toast.makeText(context, "Item deleted", Toast.LENGTH_SHORT).show()
-                    booksViewModel.removePdfFromAppDirectory(context, name.canonicalFile.toUri())
-                    //booksViewModel.pdfList.remove(name)
-                   // onRemove()
-                //    function.invoke()
-                }
-            //    SwipeToDismissBoxValue.EndToStart -> {
-                    //onRemove(currentItem)
-               //     Toast.makeText(context, "Item archived", Toast.LENGTH_SHORT).show()
-              //  }
-               // SwipeToDismissBoxValue.Settled -> return@rememberSwipeToDismissBoxState false
-                else -> Unit
+                         booksViewModel.removePdfFromAppDirectory(context, name.canonicalFile.toUri())
+                        }
+                 else -> Unit
             }
             return@rememberSwipeToDismissBoxState true
         },
@@ -172,9 +198,13 @@ enableDismissFromStartToEnd = true,
         backgroundContent = {DismissBackground(dismissState)},
     ) {
 
-    Card(onClick = {Toast.makeText(context, name.canonicalPath, Toast.LENGTH_LONG).show()
-                   Log.i("TAG::", "$name")}, modifier = Modifier.fillMaxWidth().
-        padding(5.dp),
+    Card(onClick = {
+navController.navigate("bookOpen/${Uri.encode(name.toUri().toString())}")
+        Toast.makeText(context, name.canonicalPath, Toast.LENGTH_LONG).show()
+                   Log.i("TAG::", "$name")
+                   }, modifier = Modifier
+        .fillMaxWidth()
+        .padding(5.dp),
         elevation = CardDefaults.elevatedCardElevation(10.dp),
         shape = RoundedCornerShape(20)
         ) {
@@ -184,7 +214,9 @@ enableDismissFromStartToEnd = true,
         Image(painter = painterResource(R.drawable._282), contentDescription = null,
             modifier = Modifier.weight(1f))
         Text(text = name.name, fontSize = 20.sp,
-            modifier = Modifier.padding(10.dp).weight(3f),
+            modifier = Modifier
+                .padding(10.dp)
+                .weight(3f),
             textAlign = TextAlign.Start,
             maxLines = 2)
 
@@ -202,7 +234,9 @@ fun DismissBackground(dismissState: SwipeToDismissBoxState) {
     //    SwipeToDismissBoxValue.EndToStart -> Color(0xFF1DE9B6)
         else  -> Color.Transparent
     }
-Card(modifier = Modifier.fillMaxWidth().padding(4.dp),
+Card(modifier = Modifier
+    .fillMaxWidth()
+    .padding(4.dp),
     elevation = CardDefaults.elevatedCardElevation((-10).dp)){
     Row(
         modifier = Modifier
@@ -219,4 +253,17 @@ Card(modifier = Modifier.fillMaxWidth().padding(4.dp),
 
     }
 }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun PersonaPdfViewer(modifier: Modifier = Modifier, url: String="") {
+
+    Column(modifier = Modifier.fillMaxSize()) {
+    PdfRendererViewCompose(
+        url = url,
+        lifecycleOwner = LocalLifecycleOwner.current
+    )
+    }
+
 }

@@ -130,32 +130,40 @@ val musicModel : MusicViewModel = hiltViewModel()
         },
      ) { innerPadding ->
 
-
-        Box(modifier = Modifier.fillMaxSize().padding(PaddingValues(bottom = innerPadding.calculateBottomPadding()))) {
-
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth().padding(2.dp),
-                verticalArrangement = Arrangement.spacedBy(5.dp)
+        if(musicList.isEmpty()){
+            Image(painter = painterResource(R.drawable.woman_added_song_to_playlist),
+                contentDescription = null, alignment = Alignment.Center)
+        }
+else {
+            Box(
+                modifier = Modifier.fillMaxSize()
+                    .padding(PaddingValues(bottom = innerPadding.calculateBottomPadding()))
             ) {
-                itemsIndexed(
-                    items = musicList,
-                    key = { _, music -> music.absolutePath }) { _, music ->
-                    MusicItem(
-                        name = music,
-                        musicViewModel = musicViewModel,
-                        musicModel = musicModel
-                    )
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().padding(2.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    itemsIndexed(
+                        items = musicList,
+                        key = { _, music -> music.absolutePath }) { _, music ->
+                        MusicItem(
+                            name = music,
+                            musicViewModel = musicViewModel,
+                            musicModel = musicModel
+                        )
 
 
+                    }
                 }
-            }
-           // if (isPlaying) {
+                // if (isPlaying) {
                 BottomPlaybackController(currentSong,
                     modifier = Modifier.align(Alignment.BottomCenter),
                     isPlaying,
                     onPlay = { musicModel.playMusic(context, currentSongUri!!, false) },
                     onPauseClick = { musicModel.pauseMusic(context) })
-           // }
+                // }
+            }
         }
         }
 }

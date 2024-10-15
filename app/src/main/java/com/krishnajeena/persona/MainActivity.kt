@@ -1,6 +1,7 @@
 package com.krishnajeena.persona
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -9,6 +10,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -53,6 +55,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.scale
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
@@ -130,13 +133,24 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                BackHandler(enabled =  true){
+
+                    if(navController.currentDestination?.route != "mainScreen"){
+                        navController.popBackStack()
+                    } else{
+                        (context as? Activity)?.finish()
+                    }
+                }
+
                 Scaffold(
                     topBar = {
                         TopAppBar(
                             title = { Text(title) },
                             navigationIcon = {
                                 if(currentRoute != "mainScreen") {
-                                    IconButton(onClick = {navController.navigateUp()}){
+                                    IconButton(onClick = { //navController.navigateUp()
+
+                                        navController.popBackStack()}){
                                         Icon(
                                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                                             contentDescription = null
@@ -296,19 +310,21 @@ Text(text = name.first, fontSize = 20.sp)
 
 }
 
-fun saveImageToPersona(context: Context, capturedImage: Bitmap) {
+fun saveImageToPersona(context: Context, capturedImag: Bitmap) {
 
+    val capturedImage = Bitmap.createScaledBitmap(capturedImag,
+        capturedImag.width*2, capturedImag.height*2, true)
     val folder = File(context.getExternalFilesDir(null), "PersonaClicks")
     if(!folder.exists()){
         folder.mkdirs()
     }
 
-    val filename = "IMG_${System.currentTimeMillis()}.jpg"
+    val filename = "IMG_${System.currentTimeMillis()}.png"
     val file = File(folder, filename)
 
     try {
         val outputStream = FileOutputStream(file)
-        capturedImage.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+        capturedImage.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
         outputStream.flush()
         outputStream.close()
         Toast.makeText(context, "Image Saved", Toast.LENGTH_SHORT).show()

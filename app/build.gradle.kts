@@ -104,6 +104,9 @@ dependencies {
 
     implementation ("androidx.navigation:navigation-compose:2.4.0-alpha10")
     implementation ("androidx.media:media:1.6.0")
+
+        implementation("io.github.afreakyelf:Pdf-Viewer:2.1.1")
+    implementation ("io.github.fornewid:photo-compose:1.0.1")
 }
 
 

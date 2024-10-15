@@ -112,4 +112,10 @@ else {
         return emptyList()
     }
 
+    //companion object {
+        fun isEmpty(): Boolean {
+return _pdfList.value?.isEmpty() ?: true
+        }
+    //}
+
 }

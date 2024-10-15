@@ -131,18 +131,28 @@ fun BlogsScreen(modifier: Modifier = Modifier,
 
                         OutlinedButton(onClick = {
                             if(blogName.isNotBlank() && blogUrl.isNotBlank()) {
-                                try {
-                             blogUrlViewModel.addUrl(blogName, blogUrl)
-                             Toast.makeText(context, "Blog is added!", Toast.LENGTH_SHORT).show()
-                                }
-                                catch (_: Exception){
-                                    Toast.makeText(context, "Something went wrong!", Toast.LENGTH_SHORT).show()
-                                }
+                                val formattedUrl = formatUrl(blogUrl)
+                                if (formattedUrl != null){
+                                    try {
+                                        blogUrlViewModel.addUrl(blogName, blogUrl)
+                                        Toast.makeText(
+                                            context,
+                                            "Blog is added!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } catch (_: Exception) {
+                                        Toast.makeText(
+                                            context,
+                                            "Something went wrong!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                            } else Toast.makeText(context, "Sahi URL daal bae!", Toast.LENGTH_SHORT).show()
                             scope.launch {
                                 sheetState.hide()
                             }.invokeOnCompletion { if(!sheetState.isVisible)
                                 showBottomSheet = false}
-                        }
+                        } else Toast.makeText(context, "Dhandli na karo!", Toast.LENGTH_SHORT).show()
                     }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                             Text("Add Blog", modifier = Modifier,
                                 fontFamily = FontFamily.SansSerif, fontSize = 15.sp)
@@ -183,6 +193,28 @@ else{
 
 }
 
+fun formatUrl(url: String): String? {
+    // Regex to validate URL
+    val regex = "^(http://|https://|)(www\\.)?([a-zA-Z0-9]+\\.[a-zA-Z]{2,})(/.*)?$".toRegex()
+
+    return if (url.isNotEmpty()) {
+        // Check if URL already contains http or https
+        val formattedUrl = when {
+            url.startsWith("http://") || url.startsWith("https://") -> url
+            url.startsWith("www.") -> "https://$url"
+            else -> "https://$url"
+        }
+
+        // Check if the formatted URL matches the regex
+        if (regex.matches(formattedUrl)) {
+            formattedUrl
+        } else {
+            null // Invalid URL
+        }
+    } else {
+        null // Empty URL
+    }
+}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BlogsItem(modifier: Modifier = Modifier,
