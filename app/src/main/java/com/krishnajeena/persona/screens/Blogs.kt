@@ -228,19 +228,8 @@ fun BlogsItem(modifier: Modifier = Modifier,
         confirmValueChange = {
             when(it) {
                 SwipeToDismissBoxValue.StartToEnd -> {
-                    //onRemove(currentItem)
-
-                    //  Toast.makeText(context, "Item deleted", Toast.LENGTH_SHORT).show()
                     blogUrlViewModel.removeUrl(item)
-                    //booksViewModel.pdfList.remove(name)
-                   // onRemove()
-                    //    function.invoke()
                 }
-                //    SwipeToDismissBoxValue.EndToStart -> {
-                //onRemove(currentItem)
-                //     Toast.makeText(context, "Item archived", Toast.LENGTH_SHORT).show()
-                //  }
-             //   SwipeToDismissBoxValue.Settled -> return@rememberSwipeToDismissBoxState false
                 else -> Unit
             }
             return@rememberSwipeToDismissBoxState true

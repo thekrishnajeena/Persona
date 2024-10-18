@@ -151,6 +151,7 @@ class MainActivity : ComponentActivity() {
                                     IconButton(onClick = { //navController.navigateUp()
 
                                         navController.popBackStack()}){
+
                                         Icon(
                                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                                             contentDescription = null
