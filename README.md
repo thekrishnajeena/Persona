@@ -24,6 +24,7 @@ This feature is planned to consolidate messages across multiple platforms into o
 
 ### Upcoming Features
 - **Music**: A new feature that will let you add a few tracks to help you focus and get into the flow without distractions.
+- **Notify**: to be up to date with what you want to be, for me to be updated with competitive programming contest is crucial, so I'm gonna this feature too.
 
 ## Purpose
 The goal of **Persona** is to simplify life by providing a unified space where you can store essential tasks and information, freeing you from the clutter of switching between multiple apps. This app aims to bring everything that matters to you in one place.
