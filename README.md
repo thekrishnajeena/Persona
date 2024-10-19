@@ -1,5 +1,7 @@
 ## Persona
-![log](https://github.com/user-attachments/assets/9170ba53-6ad2-43d9-9ba6-f7e75a9e928c)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/9170ba53-6ad2-43d9-9ba6-f7e75a9e928c" alt="log" width = "300" height = "300"/>
+</div>
 
 Persona is a personal project designed to bring together everything essential in one app, aiming to make you distraction-free. Whether it’s capturing moments, storing important documents, jotting down notes, or curating blogs for focused reading, xyz allows you to organize it all in one place.
 
