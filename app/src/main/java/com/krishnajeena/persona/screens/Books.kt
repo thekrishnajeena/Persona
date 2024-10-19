@@ -124,10 +124,11 @@ Column(modifier = Modifier
     NavHost(navController, "listBook"){
         composable("listBook"){
 
-//            if(booksViewModel.isEmpty()){
-//                Image(painter = painterResource(R.drawable.collection_of_books_showing_concept_of_library),
-//                    contentDescription = null)
-//            }else {
+            if(booksViewModel.isEmpty()){
+                Image(painter = painterResource(R.drawable.undraw_reading_list_re_bk72),
+                    contentDescription = null, modifier = Modifier.fillMaxSize(),
+                    alignment = Alignment.Center)
+            }else {
 
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     itemsIndexed(
@@ -143,7 +144,7 @@ Column(modifier = Modifier
 
                     }
                 }
-            //}
+            }
         }
         composable("bookOpen/{bookName}",
             arguments = listOf(navArgument("bookName"){

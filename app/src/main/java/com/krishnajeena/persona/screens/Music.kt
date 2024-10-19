@@ -131,8 +131,9 @@ val musicModel : MusicViewModel = hiltViewModel()
      ) { innerPadding ->
 
         if(musicList.isEmpty()){
-            Image(painter = painterResource(R.drawable.woman_added_song_to_playlist),
-                contentDescription = null, alignment = Alignment.Center)
+            Image(painter = painterResource(R.drawable.undraw_media_player_re_rdd2),
+                contentDescription = null, alignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize())
         }
 else {
             Box(

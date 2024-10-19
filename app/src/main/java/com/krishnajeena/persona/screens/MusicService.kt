@@ -154,8 +154,11 @@ class MusicService : Service() {
                 ACTION_PLAY_PAUSE -> {
                     if (player.isPlaying) {
                         mediaSession.controller.transportControls.pause()
+                        player.pause()
+                        musicRepository.updatePlaybackPosition(player.currentPosition)
                     } else {
                         mediaSession.controller.transportControls.play()
+
                     }
                 }
                 else -> Unit
