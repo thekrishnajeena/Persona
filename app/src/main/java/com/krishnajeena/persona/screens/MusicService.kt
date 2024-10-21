@@ -168,9 +168,12 @@ class MusicService : Service() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+
+        stopForeground(true)
+        stopSelf()
         player.release()
         mediaSession.release() // Release MediaSession when the service is destroyed
+        super.onDestroy()
     }
 
     companion object {
@@ -183,4 +186,11 @@ class MusicService : Service() {
     override fun onBind(intent: Intent): IBinder? {
         return null
     }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+        super.onTaskRemoved(rootIntent)
+    }
+
 }

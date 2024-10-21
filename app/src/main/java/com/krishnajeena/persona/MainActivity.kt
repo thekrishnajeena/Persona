@@ -87,6 +87,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        lifecycle.addObserver(AppLifecycleObserver(this))
 //        val app = application as BaseClass
 //        val blogUrlViewModel = ViewModelProvider(this)[BlogUrlViewModel::class.java]
 
@@ -240,7 +241,9 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 }
+
 
 @OptIn(ExperimentalFoundationApi::class)
 @Preview(showBackground = true, showSystemUi = true)
