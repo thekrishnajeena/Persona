@@ -61,7 +61,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PersonaApp() {
@@ -76,11 +75,8 @@ fun PersonaApp() {
         val context = LocalContext.current
 
         // Permissions to request
-        val permissions = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        } else {
+        val permissions =
             arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE) // WRITE_EXTERNAL_STORAGE is deprecated in Android 10+
-        }
 
         // Launches permission request dialog
         val requestPermissionsLauncher = rememberLauncherForActivityResult(

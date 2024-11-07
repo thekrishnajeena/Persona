@@ -45,18 +45,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -66,14 +63,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.data_layer.BlogUrl
-import com.krishnajeena.persona.data_layer.BlogUrlRepository
 import com.krishnajeena.persona.ui_layer.BlogUrlViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BlogsScreen(modifier: Modifier = Modifier,
-
+fun BlogsScreen(
 ) {
 
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -91,7 +86,7 @@ fun BlogsScreen(modifier: Modifier = Modifier,
                     contentDescription = null)
             }
         }, floatingActionButtonPosition = FabPosition.Center
-    ){innerPadding ->
+    ){_ ->
 
         val blogUrlViewModel = hiltViewModel<BlogUrlViewModel>()
         //val state by blogUrlViewModel.state.collectAsState()
@@ -217,13 +212,12 @@ fun formatUrl(url: String): String? {
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BlogsItem(modifier: Modifier = Modifier,
+fun BlogsItem(
               blogUrlViewModel: BlogUrlViewModel,
               item: BlogUrl,
               navController: NavController
 ) {
 
-    val context = LocalContext.current
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = {
             when(it) {

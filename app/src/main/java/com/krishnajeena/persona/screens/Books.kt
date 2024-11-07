@@ -1,9 +1,6 @@
 package com.krishnajeena.persona.screens
 
-import android.content.ContentResolver
 import android.net.Uri
-import android.os.Environment
-import android.provider.DocumentsContract
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -12,7 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -38,11 +34,6 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,7 +44,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -67,23 +57,9 @@ import com.krishnajeena.persona.model.BooksViewModel
 import com.rajat.pdfviewer.compose.PdfRendererViewCompose
 import java.io.File
 
-private fun getFileName(contentResolver: ContentResolver, uri: Uri): String {
-    var name = ""
-    val cursor = contentResolver.query(uri, null, null, null, null)
-    cursor?.use {
-        if (it.moveToFirst()) {
-            val nameIndex = it.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-            if (nameIndex >= 0) {
-                name = it.getString(nameIndex)
-            }
-        }
-    }
-    return name
-}
-
 
 @Composable
-fun BooksScreen(modifier: Modifier = Modifier) {
+fun BooksScreen() {
 
     val context = LocalContext.current
     val booksViewModel = BooksViewModel(context)
@@ -114,7 +90,7 @@ pdfPickerLauncher.launch(("application/pdf"))
                     contentDescription = null)
             }
         }, floatingActionButtonPosition = FabPosition.Center
-        ){ innerPadding ->
+        ){ _ ->
 Column(modifier = Modifier
     .fillMaxSize()
    ){
@@ -136,10 +112,9 @@ Column(modifier = Modifier
                         key = { _, book -> book.absolutePath }) { _, book ->
 
                         // SwipeToDismissBox() { }
-                        BookItem(book,
-                            booksViewModel, onRemove = {
-                                booksViewModel.removePdfFromAppDirectory(context, book.toUri())
-                            }, navController
+                        BookItem(
+                            book,
+                            booksViewModel, navController
                         )
 
                     }
@@ -172,7 +147,6 @@ Column(modifier = Modifier
 fun BookItem(
     name: File,
     booksViewModel: BooksViewModel,
-    onRemove: () -> Unit,
     navController: NavController
 ) {
 
@@ -227,7 +201,6 @@ navController.navigate("bookOpen/${Uri.encode(name.toUri().toString())}")
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DismissBackground(dismissState: SwipeToDismissBoxState) {
     val color = when (dismissState.dismissDirection) {
@@ -263,7 +236,7 @@ fun PersonaPdfViewer(modifier: Modifier = Modifier, url: String="") {
     Column(modifier = Modifier.fillMaxSize()) {
     PdfRendererViewCompose(
         url = url,
-        lifecycleOwner = LocalLifecycleOwner.current
+        lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     )
     }
 

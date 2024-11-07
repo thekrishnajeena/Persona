@@ -7,13 +7,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.krishnajeena.persona.data_layer.MusicRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 
 //@HiltViewModel
 class MusicViewModel : ViewModel() {
 
-    val musicRepository = MusicRepository.getInstance()
+    private val musicRepository = MusicRepository.getInstance()
     val isPlaying: LiveData<Boolean> = musicRepository.isPlaying
 
   //  var playbackPosition: LiveData<Long> = musicRepository.playbackPosition
@@ -43,7 +41,7 @@ class MusicViewModel : ViewModel() {
     }
 
     // Method to update the current song
-    private fun updateCurrentSong(songUri: String, context: Context) {
+    private fun updateCurrentSong(songUri: String) {
         _currentSong.value =  songUri//getFileName(context.contentResolver, songUri.toUri())
     }
 
@@ -52,7 +50,7 @@ class MusicViewModel : ViewModel() {
         if (b) musicRepository.updatePlaybackPosition(0)
 musicRepository.playMusic(context, songUri)
         updateCurrentSongUri(songUri)
-        updateCurrentSong(songUri.toFile().name, context)
+        updateCurrentSong(songUri.toFile().name)
      //   updatePlayingState(true)
     }
 

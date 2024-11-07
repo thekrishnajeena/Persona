@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -49,7 +48,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -70,7 +68,7 @@ fun MusicScreen(modifier: Modifier = Modifier) {
 
         composable("musicList"){
 
-            MusicListScreen(navController = navController)
+            MusicListScreen()
 
         }
 
@@ -88,7 +86,7 @@ fun MusicScreen(modifier: Modifier = Modifier) {
 @RequiresApi(Build.VERSION_CODES.O)
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
-fun MusicListScreen(modifier: Modifier = Modifier, navController: NavController) {
+fun MusicListScreen() {
 
     val context = LocalContext.current
     val musicViewModel = MusicUrlViewModel(context)
@@ -195,10 +193,9 @@ fun BottomPlaybackController(
     }
 }
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MusicItem(modifier: Modifier = Modifier, name: File, musicViewModel: MusicUrlViewModel,
-              musicModel : MusicViewModel= hiltViewModel()
+fun MusicItem(
+    name: File, musicViewModel: MusicUrlViewModel, musicModel: MusicViewModel = hiltViewModel()
 ) {
 
     val context = LocalContext.current
@@ -252,6 +249,6 @@ musicModel.playMusic(context, name.toUri(), true)
 }
 
 @Composable
-fun MusicPlayer(modifier: Modifier = Modifier) {
+fun MusicPlayer() {
     
 }

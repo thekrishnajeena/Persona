@@ -10,16 +10,15 @@ import android.os.IBinder
 import android.support.v4.media.session.MediaSessionCompat
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
-import com.krishnajeena.persona.MainActivity
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.data_layer.MusicRepository
 import dagger.hilt.android.AndroidEntryPoint
+
 @AndroidEntryPoint
 class MusicService : Service() {
 
@@ -131,7 +130,7 @@ class MusicService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun updateNotification(isPlaying: Boolean) {
-        musicRepository.currentSong.value?.let { songName ->
+        musicRepository.currentSong.value.let { songName ->
             showNotification(songName.toUri().toFile().name, isPlaying)
         }
     }
@@ -169,7 +168,6 @@ class MusicService : Service() {
 
     override fun onDestroy() {
 
-        stopForeground(true)
         stopSelf()
         player.release()
         mediaSession.release() // Release MediaSession when the service is destroyed

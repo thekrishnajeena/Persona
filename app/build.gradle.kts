@@ -3,18 +3,20 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("com.google.dagger.hilt.android")
     id("kotlin-kapt")
+//    id("com.google.devtools.ksp")
 }
 
 android {
     namespace = "com.krishnajeena.persona"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.krishnajeena.persona"
-        minSdk = 24
+        minSdk = 29
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.3"
+        multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -47,6 +49,7 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/gradle/incremental.annotation.processors"
         }
     }
 }
@@ -72,44 +75,36 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation("com.google.dagger:hilt-android:2.52")
-    kapt("com.google.dagger:hilt-android-compiler:2.52")
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.android.compiler)
+implementation(libs.hilt.android.compiler)
 
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.hilt.navigation.compose)
 
-    val room_version = "2.6.1"
 //
 //    implementation("androidx.room:room-runtime:$room_version")
-    annotationProcessor("androidx.room:room-compiler:$room_version")
 
     // To use Kotlin annotation processing tool (kapt)
-    kapt("androidx.room:room-compiler:$room_version")
 
+    implementation("androidx.multidex:multidex:2.0.1")
 
 
     implementation(libs.androidx.navigation.compose)
 
     implementation(libs.androidx.material.icons.extended.android)
 
-    implementation(libs.hilt.navigation.compose)
     implementation(libs.androidx.room.ktx)
-    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation(libs.coil.compose)
 
-    implementation ("androidx.webkit:webkit:1.7.0")
-    implementation ("androidx.compose.material3:material3:1.0.0")
+    implementation (libs.androidx.webkit)
+    implementation (libs.material3)
 
-    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.33.2-alpha")
-    implementation ("androidx.media3:media3-exoplayer:1.1.1")
+    implementation (libs.accompanist.systemuicontroller)
+    implementation (libs.androidx.media3.exoplayer)
 
-    implementation ("androidx.navigation:navigation-compose:2.4.0-alpha10")
-    implementation ("androidx.media:media:1.6.0")
+    implementation (libs.androidx.media)
 
-        implementation("io.github.afreakyelf:Pdf-Viewer:2.1.1")
-    implementation ("io.github.fornewid:photo-compose:1.0.1")
-}
-
-
-kapt {
-    correctErrorTypes = true
+        implementation(libs.pdf.viewer)
+    implementation (libs.photo.compose)
 }

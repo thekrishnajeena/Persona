@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.widget.Toast
-import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -40,7 +39,7 @@ class BooksViewModel(context: Context) : ViewModel() {
         val pdfFile = File(pdfDir, fileName)
 
         if(pdfFile.exists()){
-            Toast.makeText(context, "This is already in!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "This is already in!", Toast.LENGTH_SHORT).show()
 
         }
 else {
@@ -102,7 +101,7 @@ else {
       }
     }
 
-    fun loadBooks(context: Context) : List<File> {
+    private fun loadBooks(context: Context) : List<File> {
 
         val pdfDir =
             File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "PersonaPdfs")
