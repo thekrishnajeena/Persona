@@ -82,11 +82,14 @@ fun PersonaApp() {
                 TopAppBar(
                     title = { Text(title) },
                     navigationIcon = {
-                        if (navController.currentDestination?.route != "mainScreen") {
+                        val backStackEntry by navController.currentBackStackEntryAsState()
+
+
+                        if (backStackEntry?.destination?.route != "mainScreen") {
                             IconButton(onClick = { navController.popBackStack() }) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                    contentDescription = null
+                                    contentDescription = "Back"
                                 )
                             }
                         }
