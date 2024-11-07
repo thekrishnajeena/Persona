@@ -142,12 +142,12 @@ fun BlogsScreen(
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
-                            } else Toast.makeText(context, "Sahi URL daal bae!", Toast.LENGTH_SHORT).show()
+                            } else Toast.makeText(context, "Wrong Url!", Toast.LENGTH_SHORT).show()
                             scope.launch {
                                 sheetState.hide()
                             }.invokeOnCompletion { if(!sheetState.isVisible)
                                 showBottomSheet = false}
-                        } else Toast.makeText(context, "Dhandli na karo!", Toast.LENGTH_SHORT).show()
+                        } else Toast.makeText(context, "Something went wrong!", Toast.LENGTH_SHORT).show()
                     }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                             Text("Add Blog", modifier = Modifier,
                                 fontFamily = FontFamily.SansSerif, fontSize = 15.sp)

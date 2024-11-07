@@ -14,8 +14,8 @@ android {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.3"
+        versionCode = 4
+        versionName = "1.4"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -83,7 +83,7 @@ implementation(libs.hilt.android.compiler)
     implementation(libs.hilt.navigation.compose)
 
 //
-//    implementation("androidx.room:room-runtime:$room_version")
+    implementation("androidx.room:room-runtime:2.6.1")
 
     // To use Kotlin annotation processing tool (kapt)
 
@@ -96,6 +96,8 @@ implementation(libs.hilt.android.compiler)
 
     implementation(libs.androidx.room.ktx)
     implementation(libs.coil.compose)
+    implementation("androidx.room:room-runtime:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")  // <-- add this if missing
 
     implementation (libs.androidx.webkit)
     implementation (libs.material3)
@@ -107,4 +109,7 @@ implementation(libs.hilt.android.compiler)
 
         implementation(libs.pdf.viewer)
     implementation (libs.photo.compose)
+
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
 }

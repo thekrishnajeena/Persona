@@ -13,30 +13,14 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -50,6 +34,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.screens.BlogsScreen
 import com.krishnajeena.persona.screens.BooksScreen
@@ -57,6 +43,9 @@ import com.krishnajeena.persona.screens.DailyCameraScreen
 import com.krishnajeena.persona.screens.MusicScreen
 import com.krishnajeena.persona.screens.NotesScreen
 import com.krishnajeena.persona.ui.theme.PersonaTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -65,43 +54,20 @@ import java.io.IOException
 @Composable
 fun PersonaApp() {
     PersonaTheme {
-
         val navController = rememberNavController()
         var title by remember { mutableStateOf("Persona") }
-
-        val navBackStackEntry = navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry.value?.destination?.route
-
         val context = LocalContext.current
-
-        // Permissions to request
-        val permissions =
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE) // WRITE_EXTERNAL_STORAGE is deprecated in Android 10+
-
-        // Launches permission request dialog
-        val requestPermissionsLauncher = rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { permissionsMap ->
-            val allGranted = permissionsMap.all { it.value }
-            if (allGranted) {
-                Toast.makeText(context, "All Permissions Granted", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(context, "Permissions Denied", Toast.LENGTH_SHORT).show()
-            }
+        val personaList = remember {
+            listOf(
+                "Clicks" to R.drawable._8037,
+                "Music" to R.drawable.v790_nunny_37,
+                "Notes" to R.drawable._282,
+                "Books" to R.drawable._920933,
+                "Blogs" to R.drawable._1242056
+            )
         }
 
-        // Check if permissions are already granted
-        val arePermissionsGranted = permissions.all { permission ->
-            androidx.core.content.ContextCompat.checkSelfPermission(context, permission) ==
-                    android.content.pm.PackageManager.PERMISSION_GRANTED
-        }
-
-        // If permissions are not granted, request them at the start of the app
-        LaunchedEffect(Unit) {
-            if (!arePermissionsGranted) {
-                requestPermissionsLauncher.launch(permissions)
-            }
-        }
+        HandlePermissions(context)
 
         BackHandler(enabled = true) {
             if (navController.currentDestination?.route != "mainScreen") {
@@ -116,7 +82,7 @@ fun PersonaApp() {
                 TopAppBar(
                     title = { Text(title) },
                     navigationIcon = {
-                        if (currentRoute != "mainScreen") {
+                        if (navController.currentDestination?.route != "mainScreen") {
                             IconButton(onClick = { navController.popBackStack() }) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
@@ -126,28 +92,17 @@ fun PersonaApp() {
                         }
                     }
                 )
-            },
+            }
         ) { innerPadding ->
-
-            val personaList = listOf(
-                Pair("Clicks", R.drawable._8037),
-                Pair("Music", R.drawable.v790_nunny_37),
-                Pair("Notes", R.drawable._282),
-                Pair("Books", R.drawable._920933),
-                Pair("Blogs", R.drawable._1242056),
-            )
-
             NavHost(navController, startDestination = "mainScreen", Modifier.padding(innerPadding)) {
-
                 composable("clicks") {
                     title = "Clicks"
                     DailyCameraScreen()
                 }
-
                 composable("music") {
+                    title = "Music"
                     MusicScreen()
                 }
-
                 composable("mainScreen") {
                     title = "Persona"
                     LazyVerticalGrid(
@@ -162,17 +117,14 @@ fun PersonaApp() {
                         }
                     }
                 }
-
                 composable("notes") {
                     title = "Notes"
                     NotesScreen()
                 }
-
                 composable("books") {
                     title = "Books"
                     BooksScreen()
                 }
-
                 composable("blogs") {
                     title = "Blogs"
                     BlogsScreen()
@@ -183,94 +135,104 @@ fun PersonaApp() {
 }
 
 @OptIn(ExperimentalFoundationApi::class)
-@Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun PersonaItem(name: Pair<String, Int> = Pair("", 0), navController: NavController = rememberNavController()) {
-
+fun PersonaItem(name: Pair<String, Int>, navController: NavController) {
     val context = LocalContext.current
-    var navB by remember { mutableStateOf(false) }
+    var capturedImage by remember { mutableStateOf<Bitmap?>(null) }
 
-    if(navB){
-        LaunchedEffect(Unit) {
-            navController.navigate(name.first.lowercase())
-            navB = false
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        bitmap?.let {
+            capturedImage = it
+            CoroutineScope(Dispatchers.IO).launch {
+                saveImageToPersona(context, it)
+            }
         }
     }
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize().height(200.dp)
-            .padding(5.dp)){
-        if(name.first == "Clicks"){
-            var capturedImage by remember { mutableStateOf<Bitmap?>(null) }
-            val cameraLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.TakePicturePreview()
-            ) {
-                    bitmap ->
-                if(bitmap != null){
-                    capturedImage = bitmap
-                    saveImageToPersona(context, capturedImage!!)
-                }
-            }
-            Card(modifier = Modifier.fillMaxSize(0.8f)
-                .combinedClickable (
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxSize(0.8f)
+            .height(200.dp)
+            .padding(5.dp)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxSize(0.8f)
+                .combinedClickable(
                     onClick = {
-                        cameraLauncher.launch(null)
-                    }
-                    , onLongClick = {
-                        navController.navigate(name.first.lowercase())
+                        if (name.first == "Clicks") {
+                            cameraLauncher.launch(null)
+                        } else {
+                            navController.navigate(name.first.lowercase())
+                        }
+                    },
+                    onLongClick = {
+                        if (name.first == "Clicks") {
+                            navController.navigate(name.first.lowercase())
+                        }
                     }
                 )
-
-            ){
-
-                Image(painter = painterResource(name.second),
-                    contentDescription = null, contentScale = ContentScale.Crop,
-                    alignment = Alignment.Center)
-
-            }
-            Text(text = name.first, fontSize = 20.sp)
-
+        ) {
+//            Image(
+//                painter = painterResource(name.second),
+//                contentDescription = null,
+//                contentScale = ContentScale.Crop,
+//                alignment = Alignment.Center
+//            )
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(name.second)  // The image URL or resource
+                    .crossfade(true)  // Enable smooth transition effect when loading
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.Center
+            )
         }
-        else{
-            Card(modifier = Modifier.fillMaxSize(0.8f),
-                onClick = {
-
-                    //    navController.navigate(name.first.lowercase())
-                    navB = true
-
-                }){
-
-                Image(painter = painterResource(name.second),
-                    contentDescription = null, contentScale = ContentScale.Crop,
-                    alignment = Alignment.Center)
-
-            }
-            Text(text = name.first, fontSize = 20.sp)
-        }
+        Text(text = name.first, fontSize = 20.sp)
     }
-
 }
 
-fun saveImageToPersona(context: Context, capturedImag: Bitmap) {
-
-    val capturedImage = Bitmap.createScaledBitmap(capturedImag,
-        capturedImag.width*2, capturedImag.height*2, true)
-    val folder = File(context.getExternalFilesDir(null), "PersonaClicks")
-    if(!folder.exists()){
-        folder.mkdirs()
+@Composable
+fun HandlePermissions(context: Context) {
+    val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+    val arePermissionsGranted = permissions.all { permission ->
+        androidx.core.content.ContextCompat.checkSelfPermission(context, permission) ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED
     }
+    val requestPermissionsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissionsMap ->
+        val allGranted = permissionsMap.all { it.value }
+        Toast.makeText(
+            context,
+            if (allGranted) "All Permissions Granted" else "Permissions Denied",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+    LaunchedEffect(Unit) {
+        if (!arePermissionsGranted) {
+            requestPermissionsLauncher.launch(permissions)
+        }
+    }
+}
 
-    val filename = "IMG_${System.currentTimeMillis()}.png"
-    val file = File(folder, filename)
+fun saveImageToPersona(context: Context, capturedImage: Bitmap) {
+    val folder = File(context.getExternalFilesDir(null), "PersonaClicks")
+    if (!folder.exists()) folder.mkdirs()
 
+    val file = File(folder, "IMG_${System.currentTimeMillis()}.png")
     try {
-        val outputStream = FileOutputStream(file)
-        capturedImage.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-        outputStream.flush()
-        outputStream.close()
-        Toast.makeText(context, "Image Saved", Toast.LENGTH_SHORT).show()
-    } catch (e: IOException){
+        FileOutputStream(file).use { outputStream ->
+            capturedImage.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+        }
+        CoroutineScope(Dispatchers.Main).launch {
+            Toast.makeText(context, "Image Saved", Toast.LENGTH_SHORT).show()
+        }
+    } catch (e: IOException) {
         e.printStackTrace()
     }
-
 }
