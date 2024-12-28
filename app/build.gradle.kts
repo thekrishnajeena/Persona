@@ -14,8 +14,8 @@ android {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.5"
+        versionCode = 6
+        versionName = "1.6"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -111,5 +111,7 @@ implementation(libs.hilt.android.compiler)
     implementation (libs.photo.compose)
 
     implementation("io.coil-kt:coil-compose:2.4.0")
+
+    implementation("androidx.lifecycle:lifecycle-service:2.8.7")
 
 }

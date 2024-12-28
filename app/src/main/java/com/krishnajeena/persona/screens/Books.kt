@@ -175,8 +175,7 @@ enableDismissFromStartToEnd = true,
 
     Card(onClick = {
 navController.navigate("bookOpen/${Uri.encode(name.toUri().toString())}")
-        Toast.makeText(context, name.canonicalPath, Toast.LENGTH_LONG).show()
-                   Log.i("TAG::", "$name")
+
                    }, modifier = Modifier
         .fillMaxWidth()
         .padding(5.dp),

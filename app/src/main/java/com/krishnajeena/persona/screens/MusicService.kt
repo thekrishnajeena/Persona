@@ -13,17 +13,24 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toFile
 import androidx.core.net.toUri
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.Observer
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.data_layer.MusicRepository
+import com.krishnajeena.persona.model.MusicViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MusicService : Service() {
+class MusicService : LifecycleService() {
 
     private lateinit var mediaSession: MediaSessionCompat
     private lateinit var player: ExoPlayer
+
+    private lateinit var musicViewModel: MusicViewModel
+    private lateinit var playbackStateObserver: Observer<Boolean>
 
     var musicRepository: MusicRepository = MusicRepository.getInstance()
 
@@ -31,6 +38,9 @@ class MusicService : Service() {
         super.onCreate()
 
         player = ExoPlayer.Builder(this).build()
+
+        // Initialize MediaSession
+        musicViewModel = MusicViewModel(this)
 
         // Initialize MediaSession
         mediaSession = MediaSessionCompat(this, "MusicService").apply {
@@ -41,6 +51,7 @@ class MusicService : Service() {
                     super.onPlay()
                     player.playWhenReady = true
                     updateNotification(true)
+                    musicViewModel.updateIsPlaying(true)  // Update playback state in ViewModel
                 }
 
                 @RequiresApi(Build.VERSION_CODES.O)
@@ -48,10 +59,23 @@ class MusicService : Service() {
                     super.onPause()
                     player.playWhenReady = false
                     updateNotification(false)
+                    musicViewModel.updateIsPlaying(false)  // Update playback state in ViewModel
                 }
             })
         }
-    }
+
+        // Listen for playback state changes in the ViewModel
+        playbackStateObserver = Observer { isPlaying ->
+            if (isPlaying) {
+                player.playWhenReady = true
+            } else {
+                player.playWhenReady = false
+            }
+        }
+        musicViewModel.isPlaying.observe(this, playbackStateObserver)
+
+
+}
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun playMusic(uri: String) {
@@ -114,10 +138,10 @@ class MusicService : Service() {
         // Build and display the notification
         val notification = NotificationCompat.Builder(this, "music_channel_id")
             .setContentTitle("Playing Music")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContent(remoteViews)
             .setStyle(NotificationCompat.DecoratedCustomViewStyle()) // Required for custom view
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .setOngoing(true)
             .setContentIntent(PendingIntent.getActivity(
                 this, 0, Intent(this, MusicService::class.java),
@@ -130,13 +154,14 @@ class MusicService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun updateNotification(isPlaying: Boolean) {
-        musicRepository.currentSong.value.let { songName ->
+        musicRepository.currentSong.value?.let { songName ->
             showNotification(songName.toUri().toFile().name, isPlaying)
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         intent?.let {
             when (it.action) {
                 ACTION_PLAY -> {
@@ -182,6 +207,7 @@ class MusicService : Service() {
     }
 
     override fun onBind(intent: Intent): IBinder? {
+        super.onBind(intent)
         return null
     }
 

@@ -3,8 +3,11 @@ package com.krishnajeena.persona.ui_layer
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -29,6 +32,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -141,18 +146,32 @@ fun PersonaApp() {
 @Composable
 fun PersonaItem(name: Pair<String, Int>, navController: NavController) {
     val context = LocalContext.current
-    var capturedImage by remember { mutableStateOf<Bitmap?>(null) }
 
+    val folder = File(context.getExternalFilesDir(null), "PersonaClicks")
+    if (!folder.exists()) folder.mkdirs()
+
+// Create a file and corresponding Uri
+    val imageFile = File(folder, "IMG_${System.currentTimeMillis()}.jpg")
+    val imageUri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.provider",
+        imageFile
+    )
+
+// Updated camera launcher
     val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        bitmap?.let {
-            capturedImage = it
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            // Handle the full-resolution image stored at `imageUri`
             CoroutineScope(Dispatchers.IO).launch {
-                saveImageToPersona(context, it)
+                saveImageToPersonaUri(context, imageUri) // Optional custom save logic
             }
+        } else {
+            Toast.makeText(context, "Image capture failed", Toast.LENGTH_SHORT).show()
         }
     }
+
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -167,7 +186,7 @@ fun PersonaItem(name: Pair<String, Int>, navController: NavController) {
                 .combinedClickable(
                     onClick = {
                         if (name.first == "Clicks") {
-                            cameraLauncher.launch(null)
+                            cameraLauncher.launch(imageUri)
                         } else {
                             navController.navigate(name.first.lowercase())
                         }
@@ -222,20 +241,22 @@ fun HandlePermissions(context: Context) {
         }
     }
 }
+fun saveImageToPersonaUri(context: Context, imageUri: Uri) {
+    val contentResolver = context.contentResolver
 
-fun saveImageToPersona(context: Context, capturedImage: Bitmap) {
-    val folder = File(context.getExternalFilesDir(null), "PersonaClicks")
-    if (!folder.exists()) folder.mkdirs()
-
-    val file = File(folder, "IMG_${System.currentTimeMillis()}.png")
     try {
-        FileOutputStream(file).use { outputStream ->
-            capturedImage.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+        val inputStream = contentResolver.openInputStream(imageUri)
+        inputStream?.use {
+            // Optionally read or validate the image content
         }
+
         CoroutineScope(Dispatchers.Main).launch {
-            Toast.makeText(context, "Image Saved", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Image saved to PersonaClicks!", Toast.LENGTH_SHORT).show()
         }
-    } catch (e: IOException) {
+    } catch (e: Exception) {
         e.printStackTrace()
+        CoroutineScope(Dispatchers.Main).launch {
+            Toast.makeText(context, "Failed to save the image!", Toast.LENGTH_SHORT).show()
+        }
     }
 }
