@@ -3,6 +3,7 @@ package com.krishnajeena.persona.ui_layer
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
@@ -34,11 +35,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.krishnajeena.persona.R
@@ -82,6 +87,7 @@ fun PersonaApp() {
             }
         }
 
+
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -103,7 +109,9 @@ fun PersonaApp() {
             }
         ) { innerPadding ->
             NavHost(navController, startDestination = "mainScreen", Modifier.padding(innerPadding)) {
-                composable("clicks") {
+                composable("clicks",
+                    deepLinks = listOf(navDeepLink { uriPattern = "app://com.krishnajeena.persona/clicks" })
+                ) {
                     title = "Clicks"
                     DailyCameraScreen()
                 }
