@@ -1,4 +1,6 @@
-package com.krishnajeena.persona.model
+package com.krishnajeena.persona.ui_states
+
+import com.krishnajeena.persona.data_layer.Song
 
 data class HomeUiState(
     val loading: Boolean? = false,

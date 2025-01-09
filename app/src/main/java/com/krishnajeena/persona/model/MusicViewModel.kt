@@ -2,21 +2,17 @@ package com.krishnajeena.persona.model
 
 import android.content.ContentResolver
 import android.content.Context
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
-import android.support.v4.media.session.MediaSessionCompat
 import android.widget.Toast
-import androidx.annotation.OptIn
-import androidx.core.net.toFile
+import androidx.core.net.toUri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.util.Log
-import androidx.media3.common.util.UnstableApi
-import com.krishnajeena.persona.data_layer.MusicRepository
+import com.krishnajeena.persona.MusicDataSource
+import com.krishnajeena.persona.data_layer.Song
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
@@ -27,7 +23,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MusicViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val musicDataSource: MusicDataSource
 ) : ViewModel() {
 
     // Playback state
@@ -36,27 +33,20 @@ class MusicViewModel @Inject constructor(
     private val _currentSong = MutableLiveData<String>()
     val currentSong: LiveData<String> = _currentSong
     private val _currentSongUri = MutableLiveData<Uri>()
-    val currentSongUri: LiveData<Uri> = _currentSongUri
 
     // Music list state
     private val _musicList = MutableLiveData<List<File>>(emptyList())
     val musicList: LiveData<List<File>> get() = _musicList
 
+
     private val _currentPosition = MutableLiveData<Long>()
-    val currentPosition: LiveData<Long> = _currentPosition
 
     init {
         loadMusics()
     }
 
-    fun updatePlaybackPosition(position: Long) {
-        MusicRepository.getInstance().updatePlaybackPosition(0L)
-        _currentPosition.value = position
-    }
-
-    // Sync position with MediaPlayer
-    fun syncPosition(player: MediaPlayer) {
-        _currentPosition.value = player.currentPosition.toLong()
+    fun updateMusic(newList: List<Song>) {
+        musicDataSource.updateMusicList(newList)
     }
 
     // Music list management
@@ -65,6 +55,8 @@ class MusicViewModel @Inject constructor(
             val musicDir = File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "PersonaMusic")
             _musicList.value = musicDir.listFiles()?.toList() ?: emptyList()
         }
+
+        _musicList.value?.let { it -> updateMusic(it.map { Song(it.name, it.toUri().toString()) }) }
     }
 
     // Add music to directory
@@ -120,26 +112,11 @@ class MusicViewModel @Inject constructor(
         }
     }
 
-    // Playback controls
-    fun playMusic(uri: Uri, newOne: Boolean = false) {
-        if (newOne) MusicRepository.getInstance().updatePlaybackPosition(0)
-        MusicRepository.getInstance().playMusic(context, uri)
-        _isPlaying.value = true
-        _currentSongUri.value = uri
-        _currentSong.value = uri.toFile().name
-    }
-
-    fun pauseMusic() {
-        _isPlaying.value = false
-        MusicRepository.getInstance().pauseMusic(context)
-    }
 
     override fun onCleared() {
         super.onCleared()
         _currentPosition.postValue(0)
     }
 
-    fun updateIsPlaying(boolen: Boolean){
-        _isPlaying.value = boolen
-    }
+
 }

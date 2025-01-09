@@ -1,6 +1,6 @@
-package com.krishnajeena.persona.ui_layer
+package com.krishnajeena.persona.usecases
 
-import com.krishnajeena.persona.model.Song
+import com.krishnajeena.persona.data_layer.Song
 import com.krishnajeena.persona.services.MusicController
 import javax.inject.Inject
 

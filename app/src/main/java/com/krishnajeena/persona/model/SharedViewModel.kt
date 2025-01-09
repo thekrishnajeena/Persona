@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.krishnajeena.persona.ui_states.MediaControllerUiState
+import com.krishnajeena.persona.ui_states.PlayerState
 import com.krishnajeena.persona.usecases.DestroyMediaControllerUseCase
 import com.krishnajeena.persona.usecases.GetCurrentSongPositionUseCase
 import com.krishnajeena.persona.usecases.SetMediaControllerCallbackUseCase

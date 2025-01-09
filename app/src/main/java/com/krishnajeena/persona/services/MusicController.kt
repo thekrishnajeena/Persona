@@ -1,7 +1,7 @@
 package com.krishnajeena.persona.services
 
-import com.krishnajeena.persona.model.PlayerState
-import com.krishnajeena.persona.model.Song
+import com.krishnajeena.persona.ui_states.PlayerState
+import com.krishnajeena.persona.data_layer.Song
 
 interface MusicController {
     var mediaControllerCallback: (
@@ -24,10 +24,6 @@ interface MusicController {
     fun getCurrentPosition(): Long
 
     fun destroy()
-
-    fun skipToNextSong()
-
-    fun skipToPreviousSong()
 
     fun getCurrentSong(): Song?
 

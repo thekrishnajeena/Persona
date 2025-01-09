@@ -7,15 +7,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.krishnajeena.persona.components.HomeEvent
 import com.krishnajeena.persona.other.Resource
-import com.krishnajeena.persona.ui_layer.AddMediaItemsUseCase
-import com.krishnajeena.persona.ui_layer.PlaySongUseCase
+import com.krishnajeena.persona.usecases.AddMediaItemsUseCase
+import com.krishnajeena.persona.usecases.PlaySongUseCase
+import com.krishnajeena.persona.ui_states.HomeUiState
 import com.krishnajeena.persona.usecases.GetSongsUseCase
 import com.krishnajeena.persona.usecases.PauseSongUseCase
 import com.krishnajeena.persona.usecases.ResumeSongUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.catch
 import javax.inject.Inject
 
 @HiltViewModel

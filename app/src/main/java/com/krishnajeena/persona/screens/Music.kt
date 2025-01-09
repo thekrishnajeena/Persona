@@ -1,14 +1,11 @@
 package com.krishnajeena.persona.screens
 
-import android.content.Context
-import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -20,22 +17,18 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat.startForegroundService
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -49,14 +42,14 @@ import com.krishnajeena.persona.GetCustomContents
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.components.HomeEvent
 import com.krishnajeena.persona.model.HomeViewModel
-import com.krishnajeena.persona.model.MediaControllerUiState
+import com.krishnajeena.persona.ui_states.MediaControllerUiState
 import com.krishnajeena.persona.model.MusicViewModel
+import com.krishnajeena.persona.ui_states.PlayerState
 import com.krishnajeena.persona.model.SharedViewModel
-import com.krishnajeena.persona.services.MusicService
+import com.krishnajeena.persona.data_layer.Song
 //import com.krishnajeena.persona.services.MusicService.Companion.ACTION_PAUSE
 //import com.krishnajeena.persona.services.MusicService.Companion.ACTION_PLAY
 //import com.krishnajeena.persona.services.MusicService.Companion.ACTION_PLAY_PAUSE
-import java.io.File
 
 
 @Composable
@@ -72,27 +65,26 @@ fun MusicScreen(modifier: Modifier = Modifier, sharedViewModel: SharedViewModel)
 @OptIn(UnstableApi::class)
 @Composable
 fun MusicListScreen(navController: NavController, sharedViewModel: SharedViewModel) {
-    val context = LocalContext.current
-//    val musicViewModel: MusicUrlViewModel = hiltViewModel()
+
     val musicViewModel: MusicViewModel = hiltViewModel()
-Log.i("TAG", musicViewModel.toString())
     val musicList by musicViewModel.musicList.observeAsState(emptyList())
     val isPlaying by musicViewModel.isPlaying.observeAsState(false)
     val currentSong by musicViewModel.currentSong.observeAsState("No Song Playing")
-    val currentSongUri by musicViewModel.currentSongUri.observeAsState()
+
+    val mainViewModel: HomeViewModel = hiltViewModel()
 
     val musicPickerLauncher = rememberLauncherForActivityResult(
         contract = GetCustomContents(isMultiple = true),
         onResult = { selectedMusics ->
             selectedMusics.forEach { music ->
                 musicViewModel.addMusic(music)
+
             }
+            mainViewModel.homeUiState.copy(songs = musicViewModel.musicList.value?.map { Song(it.name, it.toUri().toString()) })
         }
     )
 
     val musicControllerUiState = sharedViewModel.musicControllerUiState
-    val activity = (LocalContext.current as ComponentActivity)
-
 
     LaunchedEffect(isPlaying) { Log.i("TAG", isPlaying.toString()) }
 
@@ -108,22 +100,20 @@ Log.i("TAG", musicViewModel.toString())
                 Icon(imageVector = Icons.Default.Add, contentDescription = null)
             }
         }
-    ) { innerPadding ->
+    ) { _ ->
         if (musicList.isEmpty()) {
             EmptyStateScreen()
         } else {
 
 
 
+
             MusicListContent(
-                musicList = musicList,
                 musicViewModel = musicViewModel,
-                context = context,
-                isPlaying = isPlaying,
                 currentSong = currentSong,
-                currentSongUri = currentSongUri,
-                innerPadding = innerPadding,
-                musicControllerUiState = musicControllerUiState
+                musicControllerUiState = musicControllerUiState,
+                onEvent = mainViewModel::onEvent,
+                mainViewModel = mainViewModel
             )
         }
     }
@@ -141,21 +131,19 @@ fun EmptyStateScreen() {
 
 @Composable
 fun MusicListContent(
-    musicList: List<File>,
     musicViewModel: MusicViewModel,
-    context: Context,
-    isPlaying: Boolean,
     currentSong: String,
-    currentSongUri: Uri?,
-    innerPadding: PaddingValues,
-    musicControllerUiState: MediaControllerUiState
+    musicControllerUiState: MediaControllerUiState,
+    onEvent: (HomeEvent) -> Unit,
+    mainViewModel: HomeViewModel
 ) {
 
-    val mainViewModel: HomeViewModel = hiltViewModel()
     val isInitialized = rememberSaveable { mutableStateOf(false) }
 
+    val musicList by musicViewModel.musicList.observeAsState(emptyList())
+
     if (!isInitialized.value) {
-        LaunchedEffect(key1 = Unit) {
+        LaunchedEffect(key1 = Unit, key2 = musicViewModel.musicList.observeAsState()) {
             mainViewModel.onEvent(HomeEvent.FetchSong)
             isInitialized.value = true
         }
@@ -173,56 +161,43 @@ fun MusicListContent(
             verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             itemsIndexed(
-                items = mainViewModel.homeUiState.songs.orEmpty(), //musicList,
+                items = musicList.map { Song(it.name, it.toUri().toString()) }, //musicList,
                 key = { _, music -> music.songUrl }
             ) { _, music ->
                 MusicItem(
-                    file = music.songUrl.toUri().toFile(),
-                    musicViewModel = musicViewModel
+                    fileUri = music.songUrl.toUri(),
+                    musicViewModel = musicViewModel,
+                    onClick = {
+                        onEvent(HomeEvent.OnSongSelected(music))
+                        onEvent(HomeEvent.PlaySong)
+                    },
+                    mainViewModel = mainViewModel
                 )
             }
         }
 
-
-
-        musicViewModel.isPlaying.value?.let {
-            BottomPlaybackController(
-                currentSong = currentSong,
-                modifier = Modifier.align(Alignment.BottomCenter),
-                onPauseClick = { musicViewModel.pauseMusic()
-
-                               val intent = Intent(context, MusicService::class.java)
-                    intent.action = ACTION_PAUSE
-                    startForegroundService(context, intent)
-                               },
-                onPlay = {
-                    if (currentSongUri != null) {
-                        musicViewModel.playMusic(currentSongUri, true)
-
-                        val intent = Intent(context, MusicService::class.java)
-                        intent.action = ACTION_PLAY_PAUSE
-                        startForegroundService(context, intent)
-                    }
-                    else musicViewModel.playMusic(musicList[0].toUri(), true)
-                },
-                musicViewModel = musicViewModel
-            )
-        }
+        BottomPlaybackController(
+                    onEvent = mainViewModel::onEvent,
+                song = musicControllerUiState.currentSong,
+                playerState = musicControllerUiState.playerState,
+                modifier = Modifier.align(Alignment.BottomCenter))
 
     }
 }
 
-@OptIn(UnstableApi::class)
 @Composable
 fun MusicItem(
-    file: File,
-    musicViewModel: MusicViewModel
+    fileUri: Uri,
+    musicViewModel: MusicViewModel,
+    onClick: () -> Unit,
+    mainViewModel: HomeViewModel
 ) {
-    val context = LocalContext.current
+
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = {
             if (it == SwipeToDismissBoxValue.StartToEnd) {
-                musicViewModel.removeMusic(file)
+                musicViewModel.removeMusic(fileUri.toFile())
+                mainViewModel.homeUiState.copy(songs = musicViewModel.musicList.value?.map { Song(it.name, it.toUri().toString()) })
             }
             true
         }
@@ -236,9 +211,7 @@ fun MusicItem(
     ) {
         Card(
             onClick = {
-                //musicViewModel.updatePlaybackPosition(0L)
-                Log.i("TAG", "MusicItem: ${file.toUri()}")
-                musicViewModel.playMusic(file.toUri(), true)
+                onClick()
                },
             modifier = Modifier
                 .fillMaxWidth()
@@ -253,7 +226,7 @@ fun MusicItem(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    text = file.name,
+                    text = fileUri.toFile().name,
                     fontSize = 20.sp,
                     modifier = Modifier
                         .padding(10.dp)
@@ -266,28 +239,13 @@ fun MusicItem(
     }
 }
 
-@OptIn(UnstableApi::class)
 @Composable
 fun BottomPlaybackController(
-    musicViewModel: MusicViewModel,
-    currentSong: String,
     modifier: Modifier = Modifier,
-    onPauseClick: () -> Unit = {},
-    onPlay: () -> Unit
+    onEvent: (HomeEvent) -> Unit,
+    song: Song?,
+    playerState: PlayerState?
 ) {
-    val context = LocalContext.current
-
-    // Observe the playback state and music list from the ViewModel
-    val isPlay by musicViewModel.isPlaying.observeAsState(initial = false)
-    val musicList by musicViewModel.musicList.observeAsState(initial = emptyList())
-
-    LaunchedEffect(isPlay) {
-        Log.i("TAG", "updateIsPlaying inside music: ${isPlay}")
-    }
-
-    val playPauseIcon by remember(isPlay) {
-        derivedStateOf { if (isPlay) Icons.Default.Pause else Icons.Default.PlayArrow }
-    }
 
        Row(
             modifier = modifier
@@ -299,7 +257,7 @@ fun BottomPlaybackController(
         ) {
             // Display the current song title
             Text(
-                text = "Now Playing: $currentSong",
+                text = "Now Playing: ${song?.title}",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
@@ -308,30 +266,28 @@ fun BottomPlaybackController(
                 modifier = Modifier.fillMaxWidth(0.7f)
             )
 
+           val painter =
+               if (playerState == PlayerState.PLAYING)
+                   Icons.Default.Pause else Icons.Default.PlayArrow
+
             // Play/Pause button
             IconButton(
                 onClick = {
-                    if (musicList.isNotEmpty()) {
-                        // Send action to the music service to toggle play/pause
-                        val intent = Intent(context, MusicService::class.java).apply {
-                            action = ACTION_PLAY_PAUSE
-                        }
-                        context.startForegroundService(intent)
-
-                        // Call respective callbacks based on the state
-                        if (isPlay) onPauseClick() else onPlay()
-                    } else {
-                        // Show a toast if the music list is empty
-                        Toast.makeText(context, "There is no music to play", Toast.LENGTH_SHORT)
-                            .show()
-                    }
                 },
                 modifier = Modifier.fillMaxWidth(0.3f)
             ) {
                 // Icon updates based on the playback state
                 Icon(
-                    imageVector = playPauseIcon,
-                    contentDescription = if (isPlay) "Pause" else "Play",
+                    imageVector = painter,
+                    contentDescription = "Music",
+                    modifier = Modifier.clickable
+                         {
+                        if (playerState == PlayerState.PLAYING) {
+                            onEvent(HomeEvent.PauseSong)
+                        } else {
+                            onEvent(HomeEvent.ResumeSong)
+                        }
+                    },
                     tint = Color.White
                 )
             }

@@ -1,11 +1,10 @@
-package com.krishnajeena.persona.ui_layer
+package com.krishnajeena.persona.model
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.krishnajeena.persona.data_layer.BlogUrl
 import com.krishnajeena.persona.data_layer.BlogUrlDatabase
-import com.krishnajeena.persona.data_layer.BlogUrlRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject

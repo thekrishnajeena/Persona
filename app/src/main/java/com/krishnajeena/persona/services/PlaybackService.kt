@@ -24,8 +24,6 @@ class PlaybackService : MediaSessionService() {
         if (!player.playWhenReady
             || player.mediaItemCount == 0
             || player.playbackState == Player.STATE_ENDED) {
-            // Stop the service if not playing, continue playing in the background
-            // otherwise.
             stopSelf()
         }
     }

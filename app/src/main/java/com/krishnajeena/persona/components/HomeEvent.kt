@@ -1,6 +1,6 @@
 package com.krishnajeena.persona.components
 
-import com.krishnajeena.persona.model.Song
+import com.krishnajeena.persona.data_layer.Song
 
 sealed class HomeEvent {
     object PlaySong : HomeEvent()

@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.krishnajeena.persona.R
+import com.krishnajeena.persona.data_layer.NoteState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
