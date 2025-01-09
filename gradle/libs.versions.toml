@@ -25,6 +25,7 @@ runtimeLivedata = "1.7.5"
 media3Ui = "1.4.1"
 cardview = "1.0.0"
 webkit = "1.12.1"
+media3Session = "1.5.1"
 
 [libraries]
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
@@ -59,6 +60,7 @@ androidx-cardview = { group = "androidx.cardview", name = "cardview", version.re
 material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 pdf-viewer = { module = "io.github.afreakyelf:Pdf-Viewer", version.ref = "pdfViewer" }
 photo-compose = { module = "io.github.fornewid:photo-compose", version.ref = "photoCompose" }
+androidx-media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3Session" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

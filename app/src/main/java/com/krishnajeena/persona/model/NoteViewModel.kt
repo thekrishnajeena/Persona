@@ -1,11 +1,14 @@
-package com.krishnajeena.persona.ui_layer
+package com.krishnajeena.persona.model
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.krishnajeena.persona.data_layer.Note
 import com.krishnajeena.persona.data_layer.NoteDatabase
+import com.krishnajeena.persona.ui_layer.NoteEvent
+import com.krishnajeena.persona.data_layer.NoteState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -21,6 +24,7 @@ class NoteViewModel @Inject constructor(
 ):  ViewModel() {
     val dao = noteDatabase.notedao
     private val isSortedByDateAdded = MutableStateFlow(true)
+    @OptIn(ExperimentalCoroutinesApi::class)
     private var notes = isSortedByDateAdded.flatMapLatest {
         if(it){
             dao.getAllOrderedDataAdded()
@@ -40,7 +44,8 @@ class NoteViewModel @Inject constructor(
 
         )
     }.stateIn(viewModelScope,
-        SharingStarted.WhileSubscribed(5000), NoteState())
+        SharingStarted.WhileSubscribed(5000), NoteState()
+    )
 
     fun onEvent(event: NoteEvent){
         when(event){
@@ -63,11 +68,6 @@ class NoteViewModel @Inject constructor(
                             discription = mutableStateOf(""))
                     }
                     }
-                }
-                else -> {
-
-                    isSortedByDateAdded.value = !isSortedByDateAdded.value
-
                 }
 
         }

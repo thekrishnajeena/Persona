@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import com.krishnajeena.persona.screens.MusicService
+import com.krishnajeena.persona.services.MusicService
 
 
 class AppLifecycleObserver(private val context: Context): DefaultLifecycleObserver {

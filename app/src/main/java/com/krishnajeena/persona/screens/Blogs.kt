@@ -6,7 +6,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CardElevation
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
@@ -63,7 +61,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.data_layer.BlogUrl
-import com.krishnajeena.persona.ui_layer.BlogUrlViewModel
+import com.krishnajeena.persona.model.BlogUrlViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -213,9 +211,9 @@ fun formatUrl(url: String): String? {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BlogsItem(
-              blogUrlViewModel: BlogUrlViewModel,
-              item: BlogUrl,
-              navController: NavController
+    blogUrlViewModel: BlogUrlViewModel,
+    item: BlogUrl,
+    navController: NavController
 ) {
 
     val dismissState = rememberSwipeToDismissBoxState(

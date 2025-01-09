@@ -27,8 +27,7 @@ class BooksViewModel(context: Context) : ViewModel() {
         }
     }
     fun savePdfToAppDirectory(context: Context, pdfUri: Uri) {
-     //   viewModelScope.launch{
-        val contentResolver = context.contentResolver
+    val contentResolver = context.contentResolver
         val inputStream = contentResolver.openInputStream(pdfUri)
 
         val pdfDir =

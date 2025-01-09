@@ -6,7 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.krishnajeena.persona.ui_layer.NoteScreen
-import com.krishnajeena.persona.ui_layer.NoteViewModel
+import com.krishnajeena.persona.model.NoteViewModel
 
 @Composable
 fun NotesScreen() {

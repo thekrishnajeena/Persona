@@ -3,18 +3,12 @@ package com.krishnajeena.persona.ui_layer
 import android.Manifest
 import android.app.Activity
 import android.content.Context
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Build
-import android.os.Environment
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -28,20 +22,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.krishnajeena.persona.R
+import com.krishnajeena.persona.model.SharedViewModel
 import com.krishnajeena.persona.screens.BlogsScreen
 import com.krishnajeena.persona.screens.BooksScreen
 import com.krishnajeena.persona.screens.DailyCameraScreen
@@ -52,12 +45,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PersonaApp() {
+fun PersonaApp(sharedViewModel: SharedViewModel) {
     PersonaTheme {
         val navController = rememberNavController()
         var title by remember { mutableStateOf("Persona") }
@@ -82,6 +73,7 @@ fun PersonaApp() {
             }
         }
 
+
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -103,13 +95,15 @@ fun PersonaApp() {
             }
         ) { innerPadding ->
             NavHost(navController, startDestination = "mainScreen", Modifier.padding(innerPadding)) {
-                composable("clicks") {
+                composable("clicks",
+                    deepLinks = listOf(navDeepLink { uriPattern = "app://com.krishnajeena.persona/clicks" })
+                ) {
                     title = "Clicks"
                     DailyCameraScreen()
                 }
                 composable("music") {
                     title = "Music"
-                    MusicScreen()
+                    MusicScreen(sharedViewModel = sharedViewModel)
                 }
                 composable("mainScreen") {
                     title = "Persona"

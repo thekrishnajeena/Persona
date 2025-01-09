@@ -2,17 +2,17 @@ package com.krishnajeena.persona.model
 
 import android.content.ContentResolver
 import android.content.Context
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.widget.Toast
-import androidx.core.net.toFile
+import androidx.core.net.toUri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.krishnajeena.persona.data_layer.MusicRepository
+import com.krishnajeena.persona.MusicDataSource
+import com.krishnajeena.persona.data_layer.Song
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
@@ -20,76 +20,58 @@ import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
 
+
 @HiltViewModel
-class MusicViewModel  @Inject constructor(
-    @ApplicationContext private val context: Context
-) : ViewModel()  {
+class MusicViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val musicDataSource: MusicDataSource
+) : ViewModel() {
 
     // Playback state
-    private val _isPlaying = MutableLiveData<Boolean>()
-    val isPlaying: LiveData<Boolean> = _isPlaying
+    private val _isPlaying = MutableLiveData(false)
+    val isPlaying: LiveData<Boolean> get() = _isPlaying
     private val _currentSong = MutableLiveData<String>()
     val currentSong: LiveData<String> = _currentSong
     private val _currentSongUri = MutableLiveData<Uri>()
-    val currentSongUri: LiveData<Uri> = _currentSongUri
-
 
     // Music list state
     private val _musicList = MutableLiveData<List<File>>(emptyList())
     val musicList: LiveData<List<File>> get() = _musicList
 
+
     private val _currentPosition = MutableLiveData<Long>()
-    val currentPosition: LiveData<Long> = _currentPosition
+
     init {
-        loadMusics(context)
+        loadMusics()
     }
 
-    fun updatePlaybackPosition(position: Long) {
-        _currentPosition.value = position
-    }
-
-    // Call this periodically during playback to sync position
-    fun syncPosition(player: MediaPlayer) {
-        _currentPosition.value = player.currentPosition.toLong()
+    fun updateMusic(newList: List<Song>) {
+        musicDataSource.updateMusicList(newList)
     }
 
     // Music list management
-    fun loadMusics(context: Context) {
+    private fun loadMusics() {
         viewModelScope.launch {
             val musicDir = File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "PersonaMusic")
-            if (musicDir.exists()) {
-                _musicList.value = musicDir.listFiles()?.toList() ?: emptyList()
-            } else {
-                _musicList.value = emptyList()
-            }
+            _musicList.value = musicDir.listFiles()?.toList() ?: emptyList()
         }
-    }
-    private fun getFileName(contentResolver: ContentResolver, uri: Uri): String {
-        var name = ""
-        val cursor = contentResolver.query(uri, null, null, null, null)
-        cursor?.use {
-            if (it.moveToFirst()) {
-                val nameIndex = it.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-                if (nameIndex >= 0) {
-                    name = it.getString(nameIndex)
-                }
-            }
-        }
-        return name
+
+        _musicList.value?.let { it -> updateMusic(it.map { Song(it.name, it.toUri().toString()) }) }
     }
 
-
-    fun addMusic(uri: Uri, context: Context) {
+    // Add music to directory
+    fun addMusic(uri: Uri) {
         val contentResolver = context.contentResolver
         val inputStream = contentResolver.openInputStream(uri) ?: return
-        val musicDir = File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "PersonaMusic")
-        if (!musicDir.exists()) musicDir.mkdirs()
+        val musicDir = File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "PersonaMusic").apply {
+            if (!exists()) mkdirs()
+        }
 
         val fileName = getFileName(contentResolver, uri)
         val musicFile = File(musicDir, fileName)
 
         if (musicFile.exists()) {
-            Toast.makeText(context, "This is already in!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "This song is already added!", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -103,91 +85,38 @@ class MusicViewModel  @Inject constructor(
             }
         }
 
-        loadMusics(context)
+        loadMusics()  // Refresh the music list after adding the new file
     }
 
-
-    fun updateIsPlaying(isPlaying: Boolean) {
-       // _isPlaying.value = isPlaying
+    // Get the file name from URI
+    private fun getFileName(contentResolver: ContentResolver, uri: Uri): String {
+        var name = ""
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val nameIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                if (nameIndex >= 0) {
+                    name = cursor.getString(nameIndex)
+                }
+            }
+        }
+        return name
     }
 
+    // Remove music from the list
     fun removeMusic(music: File) {
         viewModelScope.launch {
-            music.delete()
-            _musicList.value = _musicList.value?.filter { it != music }
+            if (music.exists()) {
+                music.delete()
+                _musicList.value = _musicList.value?.filter { it != music }
+            }
         }
     }
 
-    // Playback controls
-    fun playMusic(uri: Uri, context: Context) {
-        MusicRepository.getInstance().playMusic(context, uri)
-        _currentSongUri.value = uri
-        _currentSong.value = uri.toFile().name
+
+    override fun onCleared() {
+        super.onCleared()
+        _currentPosition.postValue(0)
     }
 
-    fun pauseMusic(context: Context) {
-        MusicRepository.getInstance().pauseMusic(context)
-    }
+
 }
-
-
-//@HiltViewModel
-//class MusicViewModel : ViewModel() {
-//
-//    private val musicRepository = MusicRepository.getInstance()
-//    val isPlaying: LiveData<Boolean> = musicRepository.isPlaying
-//
-//  //  var playbackPosition: LiveData<Long> = musicRepository.playbackPosition
-//    // LiveData to track the current song URI or title
-//    private val _currentSong = MutableLiveData<String>()
-//    val currentSong: LiveData<String> = _currentSong
-//
-//    private val _currentSongUri = MutableLiveData<Uri>()
-//    val currentSongUri: LiveData<Uri> = _currentSongUri
-//
-////    init{
-////        updatePlayingState(false)
-////    }
-//
-//
-//    // Method to update the playing state
-////    private fun updatePlayingState(isPlaying: Boolean) {
-////        _isPlaying.value = isPlaying
-////    }
-//
-//    fun updatePlaybackPosition(pos: Long){
-//        musicRepository.updatePlaybackPosition(pos)
-//    }
-//
-//    private fun updateCurrentSongUri(songUri: Uri) {
-//        _currentSongUri.value = songUri
-//    }
-//
-//    // Method to update the current song
-//    private fun updateCurrentSong(songUri: String) {
-//        _currentSong.value =  songUri//getFileName(context.contentResolver, songUri.toUri())
-//    }
-//
-//    // Communicate with the service to control music
-//    fun playMusic(context: Context, songUri: Uri, b: Boolean = false) {
-//        if (b) musicRepository.updatePlaybackPosition(0)
-//musicRepository.playMusic(context, songUri)
-//        updateCurrentSongUri(songUri)
-//        updateCurrentSong(songUri.toFile().name)
-//     //   updatePlayingState(true)
-//    }
-//
-//
-//    fun pauseMusic(context: Context) {
-//    musicRepository.pauseMusic(context)
-//    //updatePlayingState(false)
-//    }
-
-//    fun stopMusic(context: Context) {
-//        val intent = Intent(context, MusicService::class.java)
-//        intent.action = "ACTION_STOP"
-//        context.startService(intent)
-//        updatePlayingState(false)
-//    }
-
-//}
