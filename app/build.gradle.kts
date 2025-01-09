@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.cardview)
+    implementation(libs.androidx.media3.session)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -113,5 +114,13 @@ implementation(libs.hilt.android.compiler)
     implementation("io.coil-kt:coil-compose:2.4.0")
 
     implementation("androidx.lifecycle:lifecycle-service:2.8.7")
+
+    implementation("androidx.core:core:1.6.0")
+    implementation("androidx.core:core-google-shortcuts:1.0.0")
+
+    implementation ("androidx.media:media:1.7.0")
+
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7") // or the latest version
+    implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
 
 }

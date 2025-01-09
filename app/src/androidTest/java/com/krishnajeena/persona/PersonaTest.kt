@@ -21,7 +21,7 @@ class PersonaTest {
     @Test
     fun dummyTestPersona(){
         rule.setContent {
-           PersonaApp()
+           PersonaApp(sharedViewModel)
         }
 
         rule.onRoot(useUnmergedTree = true).printToLog("Clicks")
