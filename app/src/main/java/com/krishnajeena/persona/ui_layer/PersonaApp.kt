@@ -40,6 +40,7 @@ import com.krishnajeena.persona.screens.BooksScreen
 import com.krishnajeena.persona.screens.DailyCameraScreen
 import com.krishnajeena.persona.screens.MusicScreen
 import com.krishnajeena.persona.screens.NotesScreen
+import com.krishnajeena.persona.screens.VoiceMemosScreen
 import com.krishnajeena.persona.ui.theme.PersonaTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,7 +60,8 @@ fun PersonaApp(sharedViewModel: SharedViewModel) {
                 "Music" to R.drawable.v790_nunny_37,
                 "Notes" to R.drawable._282,
                 "Books" to R.drawable._920933,
-                "Blogs" to R.drawable._1242056
+                "Blogs" to R.drawable._1242056,
+                "Voice" to R.drawable.voice
             )
         }
 
@@ -130,6 +132,10 @@ fun PersonaApp(sharedViewModel: SharedViewModel) {
                 composable("blogs") {
                     title = "Blogs"
                     BlogsScreen()
+                }
+                composable("voice"){
+                    title = "Voice"
+                    VoiceMemosScreen()
                 }
             }
         }

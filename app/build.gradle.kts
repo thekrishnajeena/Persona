@@ -14,8 +14,8 @@ android {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.6"
+        versionCode = 7
+        versionName = "1.7"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -97,8 +97,8 @@ implementation(libs.hilt.android.compiler)
 
     implementation(libs.androidx.room.ktx)
     implementation(libs.coil.compose)
-    implementation("androidx.room:room-runtime:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")  // <-- add this if missing
+    implementation(libs.androidx.room.room.runtime)
+    kapt(libs.androidx.room.compiler)  // <-- add this if missing
 
     implementation (libs.androidx.webkit)
     implementation (libs.material3)
@@ -111,16 +111,16 @@ implementation(libs.hilt.android.compiler)
         implementation(libs.pdf.viewer)
     implementation (libs.photo.compose)
 
-    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation(libs.coil.compose)
 
-    implementation("androidx.lifecycle:lifecycle-service:2.8.7")
+    implementation(libs.androidx.lifecycle.service)
 
-    implementation("androidx.core:core:1.6.0")
-    implementation("androidx.core:core-google-shortcuts:1.0.0")
+    implementation(libs.androidx.core)
+    implementation("androidx.core:core-google-shortcuts:1.1.0")
 
-    implementation ("androidx.media:media:1.7.0")
+    implementation (libs.androidx.media)
 
-    implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7") // or the latest version
-    implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
+    implementation (libs.androidx.lifecycle.viewmodel.ktx) // or the latest version
+    implementation (libs.androidx.lifecycle.livedata.ktx)
 
 }
