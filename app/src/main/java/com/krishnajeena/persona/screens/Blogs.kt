@@ -1,10 +1,16 @@
 package com.krishnajeena.persona.screens
 
+import android.content.Context
+import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.net.Uri
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,6 +37,7 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -70,24 +79,28 @@ fun BlogsScreen(
 ) {
 
     var showBottomSheet by remember { mutableStateOf(false) }
+    var isWebOpen by remember {mutableStateOf(false)}
 
     Scaffold(modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                  showBottomSheet = true
-                },
-                elevation = FloatingActionButtonDefaults.elevation(0.dp),
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Add,
-                    contentDescription = null)
+            if (!isWebOpen) {
+                FloatingActionButton(
+                    onClick = {
+                        showBottomSheet = true
+                    },
+                    elevation = FloatingActionButtonDefaults.elevation(0.dp),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null
+                    )
+                }
             }
         }, floatingActionButtonPosition = FabPosition.Center
     ){_ ->
 
         val blogUrlViewModel = hiltViewModel<BlogUrlViewModel>()
-        //val state by blogUrlViewModel.state.collectAsState()
 
         val context = LocalContext.current
         val navController = rememberNavController()
@@ -95,6 +108,7 @@ fun BlogsScreen(
         NavHost(navController = navController, startDestination = "blogUrls", modifier = Modifier.fillMaxSize()){
 
         composable("blogUrls"){
+            isWebOpen = false
             if(showBottomSheet){
                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
                 val scope = rememberCoroutineScope()
@@ -179,6 +193,8 @@ else{
                 nullable = true})){
                         backStackEntry ->
                 WebViewItem(url =  backStackEntry.arguments?.getString("url") ?: "https://www.google.com/")
+                isWebOpen = true
+
             }
 
         }
@@ -254,59 +270,83 @@ SwipeToDismissBox(
     }
 }
 }
-
 @Composable
 fun WebViewItem(url: String) {
+    var isLoading by remember { mutableStateOf(true) }
+    var hasError by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
-
-Box(modifier = Modifier.fillMaxSize(),
-    contentAlignment = Alignment.Center){
-
-
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally){
-
-        var isLoading by remember{ mutableStateOf(true)}
-
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
         AndroidView(
-            factory = {
-                    context ->
-                WebView(context).apply{
+            factory = { context ->
+                WebView(context).apply {
                     webViewClient = object : WebViewClient() {
-
                         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                             super.onPageStarted(view, url, favicon)
-                            isLoading = false
+                            isLoading = true
+                            hasError = false
                         }
-
 
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
                             isLoading = false
                         }
 
+                        override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
+                            super.onReceivedError(view, request, error)
+                            isLoading = false
+                            hasError = true
+                        }
                     }
 
-                    clearCache(true)
-                    clearHistory()
-                    settings.javaScriptEnabled = true
-                    webViewClient = WebViewClient()
+                    settings.apply {
+                        javaScriptEnabled = true
+                        cacheMode = WebSettings.LOAD_NO_CACHE
+                        domStorageEnabled = true
+                    }
 
                     loadUrl(url)
                 }
-            }, modifier = Modifier.fillMaxSize()
+            },
+            modifier = Modifier.fillMaxSize()
         )
+
         if (isLoading) {
-            CircularProgressIndicator(modifier = Modifier
-                //.align(Alignment.Center), color = Color.Black,
+            CircularProgressIndicator(
+                modifier = Modifier.size(50.dp),
+                color = MaterialTheme.colorScheme.primary
             )
+        }
+
+        if (hasError) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Failed to load the page")
+                Button(
+                    onClick = {
+                        isLoading = true
+                        hasError = false
+                        context.findComponentActivity()?.recreate()
+                    }
+                ) {
+                    Text("Retry")
+                }
+            }
+        }
     }
-
-
-    }
-
 }
+
+fun Context.findComponentActivity(): ComponentActivity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is ComponentActivity) return context
+        context = context.baseContext
+    }
+    return null
 }

@@ -40,6 +40,7 @@ import com.krishnajeena.persona.screens.BooksScreen
 import com.krishnajeena.persona.screens.DailyCameraScreen
 import com.krishnajeena.persona.screens.MusicScreen
 import com.krishnajeena.persona.screens.NotesScreen
+import com.krishnajeena.persona.screens.VoiceMemosScreen
 import com.krishnajeena.persona.ui.theme.PersonaTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,7 +60,8 @@ fun PersonaApp(sharedViewModel: SharedViewModel) {
                 "Music" to R.drawable.v790_nunny_37,
                 "Notes" to R.drawable._282,
                 "Books" to R.drawable._920933,
-                "Blogs" to R.drawable._1242056
+                "Blogs" to R.drawable._1242056,
+                "Voice" to R.drawable._209989
             )
         }
 
@@ -131,6 +133,10 @@ fun PersonaApp(sharedViewModel: SharedViewModel) {
                     title = "Blogs"
                     BlogsScreen()
                 }
+                composable("voice"){
+                    title = "Voice"
+                    VoiceMemosScreen()
+                }
             }
         }
     }
@@ -192,12 +198,7 @@ fun PersonaItem(name: Pair<String, Int>, navController: NavController) {
                     }
                 )
         ) {
-//            Image(
-//                painter = painterResource(name.second),
-//                contentDescription = null,
-//                contentScale = ContentScale.Crop,
-//                alignment = Alignment.Center
-//            )
+
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(name.second)  // The image URL or resource
