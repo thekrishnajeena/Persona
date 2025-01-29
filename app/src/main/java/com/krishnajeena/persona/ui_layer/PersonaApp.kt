@@ -61,7 +61,7 @@ fun PersonaApp(sharedViewModel: SharedViewModel) {
                 "Notes" to R.drawable._282,
                 "Books" to R.drawable._920933,
                 "Blogs" to R.drawable._1242056,
-                "Voice" to R.drawable.voice
+                "Voice" to R.drawable._209989
             )
         }
 
@@ -198,12 +198,7 @@ fun PersonaItem(name: Pair<String, Int>, navController: NavController) {
                     }
                 )
         ) {
-//            Image(
-//                painter = painterResource(name.second),
-//                contentDescription = null,
-//                contentScale = ContentScale.Crop,
-//                alignment = Alignment.Center
-//            )
+
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(name.second)  // The image URL or resource
