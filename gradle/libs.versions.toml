@@ -27,7 +27,9 @@ cardview = "1.0.0"
 webkit = "1.12.1"
 media3Session = "1.5.1"
 
+
 [libraries]
+
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 androidx-core = { module = "androidx.core:core", version.ref = "coreKtx" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

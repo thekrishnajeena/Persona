@@ -47,10 +47,6 @@ import com.krishnajeena.persona.model.MusicViewModel
 import com.krishnajeena.persona.ui_states.PlayerState
 import com.krishnajeena.persona.model.SharedViewModel
 import com.krishnajeena.persona.data_layer.Song
-//import com.krishnajeena.persona.services.MusicService.Companion.ACTION_PAUSE
-//import com.krishnajeena.persona.services.MusicService.Companion.ACTION_PLAY
-//import com.krishnajeena.persona.services.MusicService.Companion.ACTION_PLAY_PAUSE
-
 
 @Composable
 fun MusicScreen(modifier: Modifier = Modifier, sharedViewModel: SharedViewModel) {

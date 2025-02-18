@@ -7,14 +7,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import com.krishnajeena.persona.model.SharedViewModel
+import com.krishnajeena.persona.reelstack.VideoDatabase
 import com.krishnajeena.persona.services.MusicService
 import com.krishnajeena.persona.ui_layer.PersonaApp
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     val sharedViewModel: SharedViewModel by viewModels()
+    @Inject
+    lateinit var database: VideoDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

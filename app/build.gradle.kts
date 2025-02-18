@@ -4,6 +4,9 @@ plugins {
     id("com.google.dagger.hilt.android")
     id("kotlin-kapt")
 //    id("com.google.devtools.ksp")
+    // In your project-level build.gradle file
+
+
 }
 
 android {
@@ -14,8 +17,8 @@ android {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
         targetSdk = 34
-        versionCode = 8
-        versionName = "1.8"
+        versionCode = 9
+        versionName = "1.9"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -68,6 +71,7 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.cardview)
     implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.media3.exoplayer)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -106,6 +110,9 @@ implementation(libs.hilt.android.compiler)
     implementation (libs.accompanist.systemuicontroller)
     implementation (libs.androidx.media3.exoplayer)
 
+    implementation("com.google.android.exoplayer:exoplayer:2.19.1")
+    implementation ("com.google.android.exoplayer:exoplayer-ui:2.19.1")
+
     implementation (libs.androidx.media)
 
         implementation(libs.pdf.viewer)
@@ -122,5 +129,19 @@ implementation(libs.hilt.android.compiler)
 
     implementation (libs.androidx.lifecycle.viewmodel.ktx) // or the latest version
     implementation (libs.androidx.lifecycle.livedata.ktx)
+
+    implementation ("com.google.dagger:hilt-android:2.52")
+    kapt ("com.google.dagger:hilt-compiler:2.51.1")
+    implementation ("androidx.room:room-runtime:2.6.1")
+    kapt ("androidx.room:room-compiler:2.6.1")
+    implementation ("androidx.room:room-ktx:2.6.1")
+    implementation("androidx.paging:paging-compose:3.2.0")
+
+    implementation("com.google.android.exoplayer:exoplayer:2.18.7")
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+
+implementation("com.google.accompanist:accompanist-permissions:0.32.0")
+
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
 
 }
