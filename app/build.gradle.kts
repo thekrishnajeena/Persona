@@ -3,9 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("com.google.dagger.hilt.android")
     id("kotlin-kapt")
-//    id("com.google.devtools.ksp")
-    // In your project-level build.gradle file
-
 
 }
 
@@ -17,8 +14,8 @@ android {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
         targetSdk = 34
-        versionCode = 9
-        versionName = "1.9"
+        versionCode = 11
+        versionName = "2.1"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -143,5 +140,8 @@ implementation(libs.hilt.android.compiler)
 implementation("com.google.accompanist:accompanist-permissions:0.32.0")
 
     implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
+
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
 
 }

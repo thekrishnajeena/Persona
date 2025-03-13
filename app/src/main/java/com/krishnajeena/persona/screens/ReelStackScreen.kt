@@ -130,8 +130,8 @@ fun VideoPagerScreen(viewModel: VideoViewModel) {
 
                         SwipeToDismissBox(
                             state = dismissState,
-                            enableDismissFromStartToEnd = true,
-                            enableDismissFromEndToStart = false,
+                            enableDismissFromStartToEnd = false,
+                            enableDismissFromEndToStart = true,
                             backgroundContent = { DismissBackground(dismissState) },
                         ) {
                             VideoPlayerScreen(
