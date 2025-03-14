@@ -23,7 +23,7 @@ interface VideoApiService {
 }
 
 object RetrofitClient {
-    private const val BASE_URL = "https://yt-s-production.up.railway.app/"
+    private const val BASE_URL = "https://www.downloadnow.space/"
 
     val instance: VideoApiService by lazy {
         Retrofit.Builder()

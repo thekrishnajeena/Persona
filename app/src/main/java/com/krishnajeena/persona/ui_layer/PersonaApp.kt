@@ -186,15 +186,20 @@ fun PersonaApp(sharedViewModel: SharedViewModel) {
                     navigationIcon = {
                         val backStackEntry by navController.currentBackStackEntryAsState()
 
-
                         if (backStackEntry?.destination?.route != "mainScreen") {
-                            IconButton(onClick = { navController.popBackStack() }) {
+                            IconButton(onClick = {
+                                val canGoBack = navController.popBackStack()
+                                if (!canGoBack) {
+                                    (context as? Activity)?.finish() // Close the app if no more screens in the stack
+                                }
+                            }) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                                     contentDescription = "Back"
                                 )
                             }
                         }
+
                     }
                 )
             }

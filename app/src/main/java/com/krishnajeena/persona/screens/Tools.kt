@@ -1,6 +1,8 @@
 package com.krishnajeena.persona.screens
+import android.app.Activity
 import android.app.DownloadManager
 import android.content.Context
+import android.content.Intent
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
@@ -19,8 +21,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -28,6 +34,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,19 +65,50 @@ fun ToolsScreen(modifier: Modifier = Modifier) {
 }
 @Composable
 fun VideoDownloaderScreen() {
+
         val context = LocalContext.current
+        val activity = context as? Activity
+        val sharedText = activity?.intent?.getStringExtra(Intent.EXTRA_TEXT)
+
+
         var videoUrl by remember { mutableStateOf("") }
         var fetchedUrl by remember { mutableStateOf<String?>(null) }
         var isLoading by remember { mutableStateOf(false) }
         var selectedType by remember { mutableStateOf("video") } // "video" or "audio"
+
+        LaunchedEffect(sharedText) {
+                if(!sharedText.isNullOrEmpty()){
+                        videoUrl = sharedText
+                        isLoading = true
+                        CoroutineScope(Dispatchers.IO).launch {
+                                val response = fetchVideoUrl(videoUrl, selectedType)
+                                withContext(Dispatchers.Main) {
+                                        isLoading = false
+                                        if (!response.url.isNullOrEmpty()) {
+                                                fetchedUrl = response.url
+                                        } else {
+                                                Toast.makeText(context, "Error fetching", Toast.LENGTH_SHORT).show()
+                                        }
+                                }
+                        }
+                }
+        }
 
         Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
                         value = videoUrl,
                         onValueChange = { videoUrl = it },
                         label = { Text("Enter Video URL") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = {
+                                if (videoUrl.isNotEmpty()) {
+                                        IconButton(onClick = { videoUrl = "" }) {
+                                                Icon(imageVector = Icons.Default.Close, contentDescription = "Clear text")
+                                        }
+                                }
+                        }
                 )
+
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -103,7 +141,7 @@ fun VideoDownloaderScreen() {
                                                 if (!response.url.isNullOrEmpty()) {
                                                         fetchedUrl = response.url
                                                 } else {
-                                                        Toast.makeText(context, response.error ?: "Error fetching", Toast.LENGTH_SHORT).show()
+                                                        Toast.makeText(context, "Error fetching", Toast.LENGTH_SHORT).show()
                                                 }
                                         }
                                 }
