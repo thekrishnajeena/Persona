@@ -116,7 +116,7 @@ fun VideoPagerScreen(viewModel: VideoViewModel) {
                     videoUri?.let {
                         val dismissState = rememberSwipeToDismissBoxState(
                             confirmValueChange = {
-                                if (it == SwipeToDismissBoxValue.StartToEnd) {
+                                if (it == SwipeToDismissBoxValue.EndToStart) {
                                     // Remove video and move to next one
                                     viewModel.removeVideo(videoUri)
 
