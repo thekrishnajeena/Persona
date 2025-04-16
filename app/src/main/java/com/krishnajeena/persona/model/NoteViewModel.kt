@@ -7,6 +7,7 @@ import com.krishnajeena.persona.data_layer.Note
 import com.krishnajeena.persona.data_layer.NoteDatabase
 import com.krishnajeena.persona.ui_layer.NoteEvent
 import com.krishnajeena.persona.data_layer.NoteState
+import com.krishnajeena.persona.data_layer.OffsetEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,29 +49,52 @@ class NoteViewModel @Inject constructor(
     )
 
     fun onEvent(event: NoteEvent){
-        when(event){
+        when (event) {
             is NoteEvent.DeleteNote -> {
                 viewModelScope.launch {
                     dao.delete(event.note)
                 }
             }
-                is NoteEvent.SaveNote -> {
-                   // viewModelScope.launch {
-                        val note = Note(
-                            title = state.value.title.value,
-                            discription = state.value.discription.value,
-                            dateDated = System.currentTimeMillis()
-                        )
-                        viewModelScope.launch { dao.upsert(note)
-                //    }
+
+            is NoteEvent.SaveNote -> {
+                val note = Note(
+                    title = state.value.title.value,
+                    discription = state.value.discription.value,
+                    dateDated = System.currentTimeMillis()
+                )
+                viewModelScope.launch {
+                    dao.upsert(note)
                     _state.update {
-                        it.copy(title = mutableStateOf(""),
-                            discription = mutableStateOf(""))
-                    }
+                        it.copy(
+                            title = mutableStateOf(""),
+                            discription = mutableStateOf("")
+                        )
                     }
                 }
+            }
 
+            is NoteEvent.UpdateNotePosition -> {
+                viewModelScope.launch {
+                    val note = dao.getNoteById(event.id)
+                    if (note != null) {
+                        val updatedNote = note.copy(position = OffsetEntity.fromOffset(event.newOffset))
+                        dao.upsert(updatedNote)
+                    }
+                }
+            }
+
+            is NoteEvent.UpdateNoteSize -> {
+                viewModelScope.launch {
+                    val note = dao.getNoteById(event.id)
+                    if (note != null) {
+                        val updatedNote = note.copy(size = OffsetEntity.fromOffset(event.newSize))
+                        dao.upsert(updatedNote)
+                    }
+                }
+            }
+
+            is NoteEvent.EditNote -> TODO()
         }
-        }
+    }
     }
 

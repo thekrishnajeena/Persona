@@ -27,11 +27,18 @@ class BlogUrlViewModel @Inject constructor(
 
     fun addUrl(blogName: String, blogUrl: String){
         viewModelScope.launch {
-            val newBlogUrl = BlogUrl(name = blogName, url = blogUrl)
-            dao.insertUrl(newBlogUrl)
-            urls.add(newBlogUrl)
+            if(urls.none{it.url == blogUrl}) {
+                val newBlogUrl = BlogUrl(name = blogName, url = blogUrl)
+                dao.insertUrl(newBlogUrl)
+                urls.add(newBlogUrl)
+            }
         }
     }
+
+    fun isAlreadyAdded(url: String): Boolean {
+        return urls.any { it.url == url }
+    }
+
 
     fun removeUrl(blogUrl: BlogUrl){
         viewModelScope.launch {

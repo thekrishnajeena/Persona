@@ -1,17 +1,29 @@
 package com.krishnajeena.persona.screens
 
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -27,16 +39,23 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -52,14 +71,19 @@ import com.krishnajeena.persona.GetCustomContents
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.model.BooksViewModel
 import com.rajat.pdfviewer.compose.PdfRendererViewCompose
+import kotlinx.coroutines.launch
 import java.io.File
 
 
+@RequiresApi(Build.VERSION_CODES.R)
 @Composable
 fun BooksScreen() {
 
     val context = LocalContext.current
     val booksViewModel = BooksViewModel(context)
+
+    var isWebOpen by remember { mutableStateOf(false) }
+
 
     val bookList by booksViewModel.pdfList.observeAsState(emptyList())
     val pdfPickerLauncher = rememberLauncherForActivityResult(
@@ -96,38 +120,118 @@ Column(modifier = Modifier
 
     NavHost(navController, "listBook"){
         composable("listBook"){
+isWebOpen = false
 
-            if(booksViewModel.isEmpty()){
-                Image(painter = painterResource(R.drawable.undraw_reading_list_re_bk72),
-                    contentDescription = null, modifier = Modifier.fillMaxSize(),
-                    alignment = Alignment.Center)
-            }else {
+            val pagerState = rememberPagerState(initialPage = 0, pageCount = {2})
+            val tabs = listOf("My Books", "Explore")
+            val coroutineScope = rememberCoroutineScope()
 
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    itemsIndexed(
-                        items = bookList,
-                        key = { _, book -> book.absolutePath }) { _, book ->
-
-                        // SwipeToDismissBox() { }
-                        BookItem(
-                            book,
-                            booksViewModel, navController
+            Column(modifier = Modifier.fillMaxSize()) {
+                TabRow(selectedTabIndex = pagerState.currentPage) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            text = { Text(title) },
+                            selected = pagerState.currentPage == index,
+                            onClick = {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
+                            }
                         )
+                    }
+                }
 
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize().align(Alignment.CenterHorizontally)
+                ) { page ->
+                    when (page) {
+                        0 -> {
+                            // My Books section
+//                            val context = LocalContext.current
+
+                            val myBooksDir = File(
+                                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                                "Persona/MyBooks"
+                            )
+
+                            val downloadedBooks = remember {
+                                myBooksDir.listFiles()?.filter {
+                                    it.extension == "pdf" || it.extension == "epub"
+                                } ?: emptyList()
+                            }
+
+// Combine both app-added books and downloaded ones
+                            val allBooks = bookList + downloadedBooks
+
+                            if (allBooks.isEmpty()) {
+                                Image(
+                                    painter = painterResource(R.drawable.undraw_reading_list_re_bk72),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    alignment = Alignment.Center
+                                )
+                            } else {
+                                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                    itemsIndexed(
+                                        items = allBooks,
+                                        key = { _, book -> book.absolutePath }
+                                    ) { _, book ->
+                                        BookItem(book, booksViewModel, navController)
+                                    }
+                                }
+                            }}
+
+
+                            1 -> {
+                            // Explore section
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "\uD83D\uDCDA Explore is cooking! You’ll be able to discover awesome books here soon.",
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+
+//                            ExploreBooksSection(
+//                                navController = navController,
+//                                booksViewModel = booksViewModel,
+//                                setIsWebOpen = { isWebOpen = it }
+//                            )
+                        }
                     }
                 }
             }
+
         }
         composable("bookOpen/{bookName}",
             arguments = listOf(navArgument("bookName"){
                 type = NavType.StringType
-            })){
+            }))
+        {
             backStackEntry ->
             val bookName = backStackEntry.arguments?.getString("bookName")
             if (bookName != null) {
                 PersonaPdfViewer(url = bookName)
             }
         }
+
+        composable(
+            "webView/{url}",
+            arguments = listOf(navArgument("url") {
+                type = NavType.StringType
+                nullable = true
+            })
+        ) { backStackEntry ->
+            WebViewItem(url = backStackEntry.arguments?.getString("url") ?: "https://www.google.com/")
+            isWebOpen = true
+        }
     }
 
 
@@ -137,6 +241,57 @@ Column(modifier = Modifier
     }
 
 }
+
+@Composable
+fun ExploreBooksSection(
+    navController: NavController,
+    booksViewModel: BooksViewModel, // if needed for future actions
+    setIsWebOpen: (Boolean) -> Unit
+) {
+    val websites = listOf(
+        "By Harsh" to "https://github.com/HarshVadaliya/tech-books-library/tree/master",
+        "WeLib" to "https://www.welib.org",
+        "By OhSussanmarie" to "https://github.com/ohsusannamarie/A-FREE-Bookshelf-for-Leveling-Up-Your-Work-and-Life"
+    )
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        contentPadding = PaddingValues(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        items(websites) { (name, url) ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.2f)
+                    .clickable {
+                        navController.navigate("webView/${Uri.encode(url)}")
+                    },
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFEEF2F5))
+                ) {
+                    Text(
+                        text = name,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFF333333),
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 //@Preview(showSystemUi = true, showBackground = true)

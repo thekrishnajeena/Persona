@@ -14,8 +14,8 @@ android {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
         targetSdk = 34
-        versionCode = 12
-        versionName = "2.1.1"
+        versionCode = 13
+        versionName = "2.1.2"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -68,6 +68,7 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.cardview)
     implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -143,5 +144,7 @@ implementation("com.google.accompanist:accompanist-permissions:0.32.0")
 
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    implementation("androidx.compose.foundation:foundation:1.5.0")
 
 }

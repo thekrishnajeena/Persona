@@ -1,9 +1,17 @@
 package com.krishnajeena.persona.screens
 
+import android.app.DownloadManager
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.Settings
+import android.util.Log
+import android.webkit.URLUtil
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -11,10 +19,14 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +35,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -37,6 +51,7 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -44,6 +59,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
@@ -55,14 +72,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -71,136 +91,284 @@ import androidx.navigation.navArgument
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.data_layer.BlogUrl
 import com.krishnajeena.persona.model.BlogUrlViewModel
+import com.krishnajeena.persona.section.blogs.BlogViewModel
 import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
 
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.res.colorResource
+import com.krishnajeena.persona.other.DownloadCompleteReceiver
+import kotlinx.coroutines.launch
+import java.io.File
+import java.net.URLConnection
+
+
+@RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BlogsScreen(
-) {
-
+fun BlogsScreen() {
     var showBottomSheet by remember { mutableStateOf(false) }
-    var isWebOpen by remember {mutableStateOf(false)}
+    var isWebOpen by remember { mutableStateOf(false) }
 
-    Scaffold(modifier = Modifier.fillMaxSize(),
+    val context = LocalContext.current
+    val navController = rememberNavController()
+
+    val tabs = listOf("My Blogs", "Explore")
+    var selectedTab by remember { mutableStateOf(0) }
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
-            if (!isWebOpen) {
+            if (!isWebOpen && selectedTab == 0) {
                 FloatingActionButton(
-                    onClick = {
-                        showBottomSheet = true
-                    },
+                    onClick = { showBottomSheet = true },
                     elevation = FloatingActionButtonDefaults.elevation(0.dp),
                     modifier = Modifier.padding(bottom = 16.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null
-                    )
+                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
                 }
             }
-        }, floatingActionButtonPosition = FabPosition.Center
-    ){_ ->
+        },
+        floatingActionButtonPosition = FabPosition.Center
+    ) { _ ->
 
-        val blogUrlViewModel = hiltViewModel<BlogUrlViewModel>()
+        NavHost(
+            navController = navController,
+            startDestination = "blogs",
+            modifier = Modifier.fillMaxSize()
+        ) {
+            composable("blogs") {
+                isWebOpen = false
+                val tabTitles = listOf("My Blogs", "Explore")
+                val pagerState = rememberPagerState(initialPage = 0,
+                    pageCount = { tabTitles.size })
+                val coroutineScope = rememberCoroutineScope()
 
-        val context = LocalContext.current
-        val navController = rememberNavController()
-
-        NavHost(navController = navController, startDestination = "blogUrls", modifier = Modifier.fillMaxSize()){
-
-        composable("blogUrls"){
-            isWebOpen = false
-            if(showBottomSheet){
-                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                val scope = rememberCoroutineScope()
-
-                ModalBottomSheet(sheetState = sheetState,
-                    onDismissRequest = {
-                        showBottomSheet = false
-                    }  ) {
-
-                    var blogName by remember{ mutableStateOf("") }
-                    var blogUrl by remember{ mutableStateOf("")}
-
-                    Column(modifier = Modifier
-                        .padding(5.dp)
-                        .fillMaxWidth(),
-                        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally){
-                        OutlinedTextField(value = blogName, onValueChange =
-                        {blogName = it}, label = { Text("Blog Name") },
-                            modifier = Modifier
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        OutlinedTextField(value = blogUrl, onValueChange =
-                        {blogUrl = it}, label = { Text("Blog Url") },
-                            modifier = Modifier
-                        )
-                        Spacer(modifier = Modifier.height(15.dp))
-
-                        OutlinedButton(onClick = {
-                            if(blogName.isNotBlank() && blogUrl.isNotBlank()) {
-                                val formattedUrl = formatUrl(blogUrl)
-                                if (formattedUrl != null){
-                                    try {
-                                        blogUrlViewModel.addUrl(blogName, blogUrl)
-                                        Toast.makeText(
-                                            context,
-                                            "Blog is added!",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    } catch (_: Exception) {
-                                        Toast.makeText(
-                                            context,
-                                            "Something went wrong!",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                Column(modifier = Modifier.fillMaxSize()) {
+                    TabRow(selectedTabIndex = pagerState.currentPage) {
+                        tabTitles.forEachIndexed { index, title ->
+                            Tab(
+                                selected = pagerState.currentPage == index,
+                                onClick = {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(index)
                                     }
-                            } else Toast.makeText(context, "Wrong Url!", Toast.LENGTH_SHORT).show()
-                            scope.launch {
-                                sheetState.hide()
-                            }.invokeOnCompletion { if(!sheetState.isVisible)
-                                showBottomSheet = false}
-                        } else Toast.makeText(context, "Something went wrong!", Toast.LENGTH_SHORT).show()
-                    }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                            Text("Add Blog", modifier = Modifier,
-                                fontFamily = FontFamily.SansSerif, fontSize = 15.sp)
+                                },
+                                text = { Text(title) }
+                            )
+                        }
+                    }
+
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.weight(1f)
+                    ) { page ->
+                        when (page) {
+                            0 -> MyBlogsSection(
+                                showBottomSheet = showBottomSheet,
+                                setShowBottomSheet = { showBottomSheet = it },
+                                isWebOpen = isWebOpen,
+                                setIsWebOpen = { isWebOpen = it },
+                                navController = navController,
+                                context = context
+                            )
+                            1 -> ExploreBlogsSection(
+                                navController = navController,
+                                setIsWebOpen = { isWebOpen = it }
+                            )
                         }
                     }
                 }
-
             }
 
-            if(blogUrlViewModel.isEmpty()){
-                Image(painter = painterResource(R.drawable.undraw_blog_post_re_fy5x), contentDescription = null)
-            }
-else{
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-
-            items(blogUrlViewModel.urls) { item ->
-
-                BlogsItem(
-                    item = item,
-                    blogUrlViewModel = blogUrlViewModel,
-                    navController = navController,
-                )
-            }
-
-        }
-        }
-        }
-
-            composable("webView/{url}",
-                arguments = listOf(navArgument("url") { type = NavType.StringType
-                nullable = true})){
-                        backStackEntry ->
-                WebViewItem(url =  backStackEntry.arguments?.getString("url") ?: "https://www.google.com/")
+            composable(
+                "webView/{url}",
+                arguments = listOf(navArgument("url") {
+                    type = NavType.StringType
+                    nullable = true
+                })
+            ) { backStackEntry ->
+                WebViewItem(url = backStackEntry.arguments?.getString("url") ?: "https://www.google.com/")
                 isWebOpen = true
-
             }
+        }
+    }
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MyBlogsSection(
+    showBottomSheet: Boolean,
+    setShowBottomSheet: (Boolean) -> Unit,
+    isWebOpen: Boolean,
+    setIsWebOpen: (Boolean) -> Unit,
+    navController: NavHostController,
+    context: Context
+) {
+    val blogUrlViewModel = hiltViewModel<BlogUrlViewModel>()
+
+    if (showBottomSheet) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val scope = rememberCoroutineScope()
+
+        ModalBottomSheet(
+            sheetState = sheetState,
+            onDismissRequest = { setShowBottomSheet(false) }
+        ) {
+            var blogName by remember { mutableStateOf("") }
+            var blogUrl by remember { mutableStateOf("") }
+
+            Column(
+                modifier = Modifier
+                    .padding(5.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                OutlinedTextField(
+                    value = blogName,
+                    onValueChange = { blogName = it },
+                    label = { Text("Blog Name") }
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = blogUrl,
+                    onValueChange = { blogUrl = it },
+                    label = { Text("Blog Url") }
+                )
+                Spacer(modifier = Modifier.height(15.dp))
+
+                OutlinedButton(
+                    onClick = {
+                        if (blogName.isNotBlank() && blogUrl.isNotBlank()) {
+                            val formattedUrl = formatUrl(blogUrl)
+                            if (formattedUrl != null) {
+                                try {
+                                    blogUrlViewModel.addUrl(blogName, formattedUrl)
+                                    Toast.makeText(context, "Blog is added!", Toast.LENGTH_SHORT).show()
+                                } catch (_: Exception) {
+                                    Toast.makeText(context, "Something went wrong!", Toast.LENGTH_SHORT).show()
+                                }
+                            } else Toast.makeText(context, "Wrong Url!", Toast.LENGTH_SHORT).show()
+
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) setShowBottomSheet(false)
+                            }
+                        } else {
+                            Toast.makeText(context, "Fields can't be empty!", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Text("Add Blog", fontFamily = FontFamily.SansSerif, fontSize = 15.sp)
+                }
+            }
         }
     }
 
+    if (blogUrlViewModel.isEmpty()) {
+        Image(painter = painterResource(R.drawable.undraw_blog_post_re_fy5x), contentDescription = null)
+    } else {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(blogUrlViewModel.urls) { item ->
+                BlogsItem(
+                    item = item,
+                    blogUrlViewModel = blogUrlViewModel,
+                    navController = navController
+                )
+            }
+        }
+    }
 }
+
+
+@Composable
+fun ExploreBlogsSection(
+    navController: NavController,
+    setIsWebOpen: (Boolean) -> Unit,
+    viewModel: BlogViewModel = viewModel(),
+    blogUrlViewModel: BlogUrlViewModel = hiltViewModel(),
+    context: Context = LocalContext.current
+) {
+    if (viewModel.isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        viewModel.blogCategories.forEach { category ->
+            item {
+                Text(
+                    text = category.name,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            items(category.blogs) { blog ->
+                val isAlreadySaved = blogUrlViewModel.isAlreadyAdded(blog.url)
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    elevation = CardDefaults.elevatedCardElevation(6.dp),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .clickable {
+                                setIsWebOpen(true)
+                                navController.navigate("webView/${Uri.encode(blog.url)}")
+                            }
+                            .padding(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = blog.title,
+                                fontSize = 16.sp,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            IconButton(
+                                onClick = {
+                                    if (!isAlreadySaved) {
+                                        blogUrlViewModel.addUrl(blog.title, blog.url)
+                                        Toast.makeText(context, "Blog added!", Toast.LENGTH_SHORT).show()
+                                    } else{
+                                        Toast.makeText(context, "Blog already added!", Toast.LENGTH_SHORT).show()
+
+                                    }
+                                },
+
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Add",
+                                    tint = if (isAlreadySaved) Color.LightGray else MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Text(text = blog.url, fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 fun formatUrl(url: String): String? {
     // Regex to validate URL
@@ -270,42 +438,116 @@ SwipeToDismissBox(
     }
 }
 }
+@RequiresApi(Build.VERSION_CODES.R)
 @Composable
 fun WebViewItem(url: String) {
     var isLoading by remember { mutableStateOf(true) }
     var hasError by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
+    val webView = remember { WebView(context) }
+
+    // Check if the app has the necessary permissions
+    val hasStoragePermission = Environment.isExternalStorageManager() // For Android 11 and above
+
+    // Request permission if needed
+    if (!hasStoragePermission) {
+        val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+            data = Uri.parse("package:" + context.packageName)
+        }
+        context.startActivity(intent)
+    }
+
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AndroidView(
-            factory = { context ->
-                WebView(context).apply {
+            factory = {
+                webView.apply {
                     webViewClient = object : WebViewClient() {
                         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                            super.onPageStarted(view, url, favicon)
                             isLoading = true
                             hasError = false
                         }
 
                         override fun onPageFinished(view: WebView?, url: String?) {
-                            super.onPageFinished(view, url)
                             isLoading = false
                         }
 
-                        override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
-                            super.onReceivedError(view, request, error)
-                            isLoading = false
-                            hasError = true
+                        override fun onReceivedError(
+                            view: WebView?, request: WebResourceRequest?, error: WebResourceError?
+                        ) {
+                            if (request?.isForMainFrame == true) {
+                                isLoading = false
+                                hasError = true
+                            }
                         }
                     }
 
                     settings.apply {
                         javaScriptEnabled = true
-                        cacheMode = WebSettings.LOAD_NO_CACHE
                         domStorageEnabled = true
+                        cacheMode = WebSettings.LOAD_NO_CACHE
+                        setSupportZoom(true)
+                        builtInZoomControls = true
+                        displayZoomControls = false
+                    }
+
+                    // Handle downloads to Downloads/Persona/MyBooks
+                    setDownloadListener { downloadUrl, _, contentDisposition, mimeType, _ ->
+                        val fileName = URLUtil.guessFileName(downloadUrl, contentDisposition, mimeType)
+
+                        // Check if permissions are granted before downloading
+                        if (hasStoragePermission) {
+                            val downloadDir = File(
+                                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                                "Persona/MyBooks"
+                            )
+                            if (!downloadDir.exists()) {
+                                val success = downloadDir.mkdirs()
+                                if (success) {
+                                    Log.d("Download", "Folder created successfully.")
+                                } else {
+                                    Log.e("Download", "Failed to create folder.")
+                                }
+                            }
+
+                            // ✅ Guess the file name using URLUtil and fallback MIME type if null or unknown
+                            val resolvedMimeType = mimeType ?: URLConnection.guessContentTypeFromName(downloadUrl) ?: "application/pdf"
+                            val guessedFileName = URLUtil.guessFileName(downloadUrl, contentDisposition, resolvedMimeType)
+
+                            val request = DownloadManager.Request(Uri.parse(downloadUrl)).apply {
+                                setTitle(guessedFileName)
+                                setDescription("Downloading book...")
+                                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+
+                                // ✅ Save to Downloads/Persona/MyBooks with correct name
+                                setDestinationInExternalPublicDir(
+                                    Environment.DIRECTORY_DOWNLOADS,
+                                    "Persona/MyBooks/$guessedFileName"
+                                )
+
+                                setMimeType(resolvedMimeType)
+                                setAllowedOverMetered(true)
+                                setAllowedOverRoaming(true)
+                            }
+
+                            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                            val downloadId = downloadManager.enqueue(request)
+
+                            DownloadCompleteReceiver.downloadId = downloadId
+                            DownloadCompleteReceiver.expectedFileName = guessedFileName
+                            DownloadCompleteReceiver.expectedMimeType = resolvedMimeType
+
+                            context.registerReceiver(
+                                DownloadCompleteReceiver,
+                                IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+
+                            )
+
+                            Toast.makeText(context, "Downloading $guessedFileName", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Permission is required to download the file", Toast.LENGTH_SHORT).show()
+                        }
+
                     }
 
                     loadUrl(url)
@@ -315,10 +557,7 @@ fun WebViewItem(url: String) {
         )
 
         if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(50.dp),
-                color = MaterialTheme.colorScheme.primary
-            )
+            CircularProgressIndicator()
         }
 
         if (hasError) {
@@ -330,9 +569,9 @@ fun WebViewItem(url: String) {
                 Text("Failed to load the page")
                 Button(
                     onClick = {
-                        isLoading = true
                         hasError = false
-                        context.findComponentActivity()?.recreate()
+                        isLoading = true
+                        webView.reload()
                     }
                 ) {
                     Text("Retry")
