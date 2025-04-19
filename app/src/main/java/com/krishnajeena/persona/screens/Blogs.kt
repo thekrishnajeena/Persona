@@ -101,6 +101,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.res.colorResource
+import androidx.core.content.ContextCompat
 import com.krishnajeena.persona.other.DownloadCompleteReceiver
 import kotlinx.coroutines.launch
 import java.io.File
@@ -110,7 +111,7 @@ import java.net.URLConnection
 @RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BlogsScreen() {
+fun StudyScreen() {
     var showBottomSheet by remember { mutableStateOf(false) }
     var isWebOpen by remember { mutableStateOf(false) }
 
@@ -122,18 +123,6 @@ fun BlogsScreen() {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        floatingActionButton = {
-            if (!isWebOpen && selectedTab == 0) {
-                FloatingActionButton(
-                    onClick = { showBottomSheet = true },
-                    elevation = FloatingActionButtonDefaults.elevation(0.dp),
-                    modifier = Modifier.padding(bottom = 16.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                }
-            }
-        },
-        floatingActionButtonPosition = FabPosition.Center
     ) { _ ->
 
         NavHost(
@@ -143,7 +132,7 @@ fun BlogsScreen() {
         ) {
             composable("blogs") {
                 isWebOpen = false
-                val tabTitles = listOf("My Blogs", "Explore")
+                val tabTitles = listOf("My Blogs", "My Notes")
                 val pagerState = rememberPagerState(initialPage = 0,
                     pageCount = { tabTitles.size })
                 val coroutineScope = rememberCoroutineScope()
@@ -176,10 +165,7 @@ fun BlogsScreen() {
                                 navController = navController,
                                 context = context
                             )
-                            1 -> ExploreBlogsSection(
-                                navController = navController,
-                                setIsWebOpen = { isWebOpen = it }
-                            )
+                            1 -> NotesScreen()
                         }
                     }
                 }
@@ -195,6 +181,7 @@ fun BlogsScreen() {
                 WebViewItem(url = backStackEntry.arguments?.getString("url") ?: "https://www.google.com/")
                 isWebOpen = true
             }
+
         }
     }
 }
@@ -209,6 +196,20 @@ fun MyBlogsSection(
     navController: NavHostController,
     context: Context
 ) {
+    var showBottomSheet by remember { mutableStateOf(false) }
+    Scaffold(  floatingActionButton = {
+        if (!isWebOpen) {
+            FloatingActionButton(
+                onClick = { showBottomSheet = true },
+                elevation = FloatingActionButtonDefaults.elevation(0.dp),
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = null)
+            }
+        }
+    },
+        floatingActionButtonPosition = FabPosition.Center) { innerPadding ->
+
     val blogUrlViewModel = hiltViewModel<BlogUrlViewModel>()
 
     if (showBottomSheet) {
@@ -282,90 +283,6 @@ fun MyBlogsSection(
             }
         }
     }
-}
-
-
-@Composable
-fun ExploreBlogsSection(
-    navController: NavController,
-    setIsWebOpen: (Boolean) -> Unit,
-    viewModel: BlogViewModel = viewModel(),
-    blogUrlViewModel: BlogUrlViewModel = hiltViewModel(),
-    context: Context = LocalContext.current
-) {
-    if (viewModel.isLoading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        viewModel.blogCategories.forEach { category ->
-            item {
-                Text(
-                    text = category.name,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-
-            items(category.blogs) { blog ->
-                val isAlreadySaved = blogUrlViewModel.isAlreadyAdded(blog.url)
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    elevation = CardDefaults.elevatedCardElevation(6.dp),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .clickable {
-                                setIsWebOpen(true)
-                                navController.navigate("webView/${Uri.encode(blog.url)}")
-                            }
-                            .padding(12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = blog.title,
-                                fontSize = 16.sp,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            IconButton(
-                                onClick = {
-                                    if (!isAlreadySaved) {
-                                        blogUrlViewModel.addUrl(blog.title, blog.url)
-                                        Toast.makeText(context, "Blog added!", Toast.LENGTH_SHORT).show()
-                                    } else{
-                                        Toast.makeText(context, "Blog already added!", Toast.LENGTH_SHORT).show()
-
-                                    }
-                                },
-
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Add",
-                                    tint = if (isAlreadySaved) Color.LightGray else MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Text(text = blog.url, fontSize = 12.sp)
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -537,10 +454,11 @@ fun WebViewItem(url: String) {
                             DownloadCompleteReceiver.expectedFileName = guessedFileName
                             DownloadCompleteReceiver.expectedMimeType = resolvedMimeType
 
-                            context.registerReceiver(
+                            ContextCompat.registerReceiver(
+                                context,
                                 DownloadCompleteReceiver,
                                 IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-
+                                ContextCompat.RECEIVER_NOT_EXPORTED
                             )
 
                             Toast.makeText(context, "Downloading $guessedFileName", Toast.LENGTH_SHORT).show()
