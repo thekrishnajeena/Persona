@@ -15,20 +15,21 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,15 +45,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -73,15 +78,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -98,6 +102,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.data_layer.BlogItem
+import com.krishnajeena.persona.model.BlogUrlViewModel
+import com.krishnajeena.persona.model.CameraClickViewModel
 import com.krishnajeena.persona.model.CameraPhotoViewModel
 import com.krishnajeena.persona.model.CategoryBlogViewModel
 import com.krishnajeena.persona.model.SharedViewModel
@@ -122,11 +128,13 @@ import java.io.File
 @RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPhotoApi::class)
 @Composable
-fun PersonaApp(sharedViewModel: SharedViewModel, viewModel: CameraPhotoViewModel = viewModel()) {
+fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel()) {
     PersonaTheme {
         val navController = rememberNavController()
         var title by remember { mutableStateOf("Persona") }
         val context = LocalContext.current
+
+        val cameraClickViewModel: CameraClickViewModel = hiltViewModel<CameraClickViewModel>()
 
         HandlePermissions(context)
 
@@ -150,17 +158,35 @@ fun PersonaApp(sharedViewModel: SharedViewModel, viewModel: CameraPhotoViewModel
 
 // Apply this modifier to the Box or Column containing the pull effect
 
-
+        var showPopup by remember { mutableStateOf(false) }
 
         Scaffold(
+
             topBar = {
                 TopAppBar(
                     title = { Text(title) },
+                    actions = {
+                        IconButton(onClick = { showPopup = true }) {
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Profile"
+                            )
+                        }
+
+                        // Popup
+                        DropdownMenu(
+                            expanded = showPopup,
+                            onDismissRequest = { showPopup = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("🚧 Under Construction") },
+                                onClick = { showPopup = false }
+                            )
+                        }
+                    }
                 )
             },
-            bottomBar = { BottomBar(navController) },
-            floatingActionButtonPosition = FabPosition.Center
-
+            bottomBar = { BottomBar(navController, cameraClickViewModel) },
         ) { innerPadding ->
 
             val activity = context as? Activity
@@ -176,12 +202,17 @@ fun PersonaApp(sharedViewModel: SharedViewModel, viewModel: CameraPhotoViewModel
 
             val categoryBlogViewModel: CategoryBlogViewModel = viewModel()
 
-            NavHost(navController, startDestination = BottomNavItem.Explore.route, modifier = Modifier
-                .padding(innerPadding)) {
+            NavHost(navController, startDestination = if(sharedText!=null)
+                BottomNavItem.Tools.route else BottomNavItem.Explore.route, modifier = Modifier
+                .padding(top=innerPadding.calculateTopPadding(),
+                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                    end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)).fillMaxSize()
+            ) {
 
                 composable(BottomNavItem.Explore.route) { ExploreScreen(onCategoryClick = {
-                        blogList ->
+                        blogList, name ->
                     categoryBlogViewModel.setBlogs(blogList)
+                    categoryBlogViewModel.setName(name)
                     navController.navigate(BottomNavItem.BlogsOfCategory.route)
 
                 }
@@ -189,7 +220,7 @@ fun PersonaApp(sharedViewModel: SharedViewModel, viewModel: CameraPhotoViewModel
 
                 composable(BottomNavItem.ReelStack.route) { ReelScreen() }
                 composable(BottomNavItem.Clicks.route,
-                    deepLinks = listOf(navDeepLink { uriPattern = "app://com.krishnajeena.persona/clicks" })) { DailyCameraScreen(navController) }
+                    deepLinks = listOf(navDeepLink { uriPattern = "app://com.krishnajeena.persona/clicks" })) { DailyCameraScreen(navController, cameraClickViewModel) }
                 composable(BottomNavItem.Study.route) { StudyScreen() }
                 composable(BottomNavItem.Tools.route) { ToolsScreen() }
                 composable(BottomNavItem.Music.route){
@@ -199,7 +230,7 @@ fun PersonaApp(sharedViewModel: SharedViewModel, viewModel: CameraPhotoViewModel
                 composable(
                     route = BottomNavItem.BlogsOfCategory.route
                 ) {
-                    CategoryClickedScreen(categoryBlogViewModel.selectedBlogs.value)
+                    CategoryClickedScreen(categoryBlogViewModel.selectedBlogs.value, categoryBlogViewModel.blogCategoryName.value, navController)
                 }
 
                 composable(
@@ -212,60 +243,67 @@ fun PersonaApp(sharedViewModel: SharedViewModel, viewModel: CameraPhotoViewModel
                 }
 
                 composable("personaImagesList") {
-            Box(modifier = Modifier.fillMaxSize()) {
-                LazyVerticalGrid(
-                    modifier = Modifier.padding(2.dp),
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(10.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    items(
-                        items = clicksUri,
-                        key = { it.toString() } // Use a unique and stable key for each item
-                    ) { img ->
-                        val dismissState = rememberSwipeToDismissBoxState(
-                            confirmValueChange = {
-                                when (it) {
-                                    SwipeToDismissBoxValue.StartToEnd -> {
-                                        viewModel.removeImage(context, img)
-                                    }
-                                    else -> Unit
-                                }
-                                true
-                            },
-                            positionalThreshold = { it * 0.25f }
-                        )
-
-                        SwipeToDismissBox(
-                            state = dismissState,
-                            modifier = Modifier,
-                            enableDismissFromStartToEnd = true,
-                            enableDismissFromEndToStart = false,
-                            backgroundContent = { DismissBackground(dismissState) },
-                        ) {
-                            Card(
+                    viewModel.fetchImages(context)
+                    if(clicksUri.isEmpty()){
+                        AsyncImage(model = R.drawable.undraw_empty_4zx0, contentDescription = null,
+                            modifier = Modifier.fillMaxSize())
+                    }else {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            LazyVerticalGrid(
                                 modifier = Modifier.padding(2.dp),
-                                onClick = {
-                                    navController.navigate(
-                                        "openPersonaImage/${Uri.encode(img.toString())}"
-                                    )
-                                },
-                                elevation = CardDefaults.elevatedCardElevation(10.dp),
-                                shape = RoundedCornerShape(10.dp)
+                                columns = GridCells.Fixed(2),
+                                contentPadding = PaddingValues(10.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
-                                AsyncImage(
-                                    model = img,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.FillWidth,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                                items(
+                                    items = clicksUri,
+                                    key = { it.toString() } // Use a unique and stable key for each item
+                                ) { img ->
+                                    val dismissState = rememberSwipeToDismissBoxState(
+                                        confirmValueChange = {
+                                            when (it) {
+                                                SwipeToDismissBoxValue.StartToEnd -> {
+                                                    viewModel.removeImage(context, img)
+                                                }
+
+                                                else -> Unit
+                                            }
+                                            true
+                                        },
+                                        positionalThreshold = { it * 0.25f }
+                                    )
+
+                                    SwipeToDismissBox(
+                                        state = dismissState,
+                                        modifier = Modifier,
+                                        enableDismissFromStartToEnd = true,
+                                        enableDismissFromEndToStart = false,
+                                        backgroundContent = { DismissBackground(dismissState) },
+                                    ) {
+                                        Card(
+                                            modifier = Modifier.padding(2.dp),
+                                            onClick = {
+                                                navController.navigate(
+                                                    "openPersonaImage/${Uri.encode(img.toString())}"
+                                                )
+                                            },
+                                            elevation = CardDefaults.elevatedCardElevation(10.dp),
+                                            shape = RoundedCornerShape(10.dp)
+                                        ) {
+                                            AsyncImage(
+                                                model = img,
+                                                contentDescription = null,
+                                                contentScale = ContentScale.FillWidth,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        }
+                                    }
+                                }
                             }
+
                         }
                     }
-                }
-
-            }
         }
 
         composable(
@@ -276,7 +314,8 @@ fun PersonaApp(sharedViewModel: SharedViewModel, viewModel: CameraPhotoViewModel
             val imageUri = backStackEntry.arguments?.getString("imageUri")
             if (imageUri != null) {
                 PhotoBox {
-                    AsyncImage(model = imageUri, contentDescription = null, modifier = Modifier.fillMaxSize())
+                    AsyncImage(model = imageUri, contentDescription = null, modifier = Modifier.fillMaxSize()
+                        .padding(bottom = 100.dp))
                 }
             }
         }
@@ -288,11 +327,23 @@ fun PersonaApp(sharedViewModel: SharedViewModel, viewModel: CameraPhotoViewModel
 }
 
 @Composable
-fun CategoryClickedScreen(value: List<BlogItem>) {
+fun CategoryClickedScreen(
+    value: List<BlogItem>,
+    blogCatName: String,
+    navController: NavController
+) {
+
+Column(modifier = Modifier.fillMaxSize().padding(16.dp)){
+    Text(
+        text = blogCatName,
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(4.dp)
     ) {
         items(value) { blog ->
             Card(
@@ -300,11 +351,16 @@ fun CategoryClickedScreen(value: List<BlogItem>) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .padding(vertical = 8.dp).clickable{
+                        navController.navigate("webview/${Uri.encode(blog.url)}")
+                    }
             ) {
+                Row(modifier = Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically){
                 Column(
                     modifier = Modifier
-                        .padding(16.dp)
+                        .padding(6.dp).
+                    fillMaxWidth(.75f)
                 ) {
                     Text(
                         text = blog.title,
@@ -318,13 +374,33 @@ fun CategoryClickedScreen(value: List<BlogItem>) {
                         color = Color.Gray
                     )
                 }
+                    val context = LocalContext.current
+
+                    val blogUrlViewModel = hiltViewModel<BlogUrlViewModel>()
+                    IconButton(modifier = Modifier.padding(2.dp).size(20.dp),
+                        onClick = {
+                        blogUrlViewModel.addUrl(blog.title, blog.url)
+                        if(blogUrlViewModel.isAlreadyAdded(blog.url)){
+                            Toast.makeText(context, "Added to My Blogs", Toast.LENGTH_SHORT).show()
+                        }
+                    }, enabled = !blogUrlViewModel.isAlreadyAdded(blog.url),
+                        ){
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add Blog",
+                            modifier = Modifier.size(20.dp),
+                            tint = if(blogUrlViewModel.isAlreadyAdded(blog.url)) Color.Gray else Color.Black)
+                    }
+            }
             }
         }
     }
 
 }
+}
+
+
+
 @Composable
-fun BottomBar(navController: NavController) {
+fun BottomBar(navController: NavController, cameraClickViewModel: CameraClickViewModel) {
     val items = listOf(
         BottomNavItem.Explore,
         BottomNavItem.ReelStack,
@@ -332,134 +408,145 @@ fun BottomBar(navController: NavController) {
         BottomNavItem.Study,
         BottomNavItem.Tools
     )
+
     val currentBackStack by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStack?.destination?.route
 
     var isBottomBarVisible by remember { mutableStateOf(true) }
-    val context = LocalContext.current
-    val folder = File(
+
+    LocalContext.current
+    File(
         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
         "Persona/Clicks"
     ).apply { if (!exists()) mkdirs() }
 
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            // success logic
-        } else {
-            Toast.makeText(context, "Image capture failed", Toast.LENGTH_SHORT).show()
-        }
-    }
 
-    var currentImageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // 👇 Make sure the Box fills the whole screen
+
     Box(
         modifier = Modifier
-
+            .fillMaxWidth()
+            .wrapContentHeight()
+            ,
+        contentAlignment = Alignment.BottomCenter
     ) {
-        // BottomBar section aligned to bottom
-        Box(
+
+    // BottomAppBar
+        AnimatedVisibility(
+            visible = isBottomBarVisible,
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it }),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
         ) {
-            // Show/hide with animation
-            AnimatedVisibility(
-                visible = isBottomBarVisible,
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it })
+            BottomAppBar(
+                tonalElevation = 0.dp,
+                modifier = Modifier,
+                contentPadding = PaddingValues(horizontal = 6.dp)
             ) {
-                Box {
-                    BottomAppBar(
-                        contentPadding = PaddingValues(horizontal = 6.dp),
-                        containerColor = Color.White
-                    ) {
-                        items.forEachIndexed { index, item ->
-                            if (index == 2) {
-                                Spacer(Modifier.weight(1f)) // leave space for FAB
-                            } else {
-                                NavigationBarItem(
-                                    icon = { Icon(item.icon, contentDescription = item.label) },
-                                    label = { Text(item.label) },
-                                    selected = currentRoute == item.route,
-                                    onClick = { navController.navigate(item.route) },
-                                    alwaysShowLabel = true
-                                )
-                            }
-                        }
-                    }
-
-                    // FAB
-                    FloatingActionButton(
-                        onClick = {
-                            if (currentRoute == BottomNavItem.Clicks.route) {
-                                val imageFile = File(folder, "IMG_${System.currentTimeMillis()}.jpg")
-                                currentImageUri = FileProvider.getUriForFile(
-                                    context,
-                                    "${context.packageName}.provider",
-                                    imageFile
-                                )
-                                currentImageUri?.let { uri -> cameraLauncher.launch(uri) }
-                            } else {
-                                navController.navigate(BottomNavItem.Clicks.route) {
-                                    launchSingleTop = true
-                                }
-                            }
-                        },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .offset(y = (-32).dp)
-                            .size(70.dp),
-                        shape = CircleShape
-                    ) {
-                        Icon(
-                            Icons.Default.CameraAlt,
-                            contentDescription = "Clicks",
-                            modifier = Modifier.size(32.dp)
+                items.forEachIndexed { index, item ->
+                    if (index == 2) {
+                        Spacer(Modifier.weight(1f))
+                    } else {
+                        NavigationBarItem(
+                            icon = { Icon(item.icon, contentDescription = item.label) },
+                            label = { Text(item.label) },
+                            selected = currentRoute == item.route,
+                            onClick = { navController.navigate(item.route) },
+                            alwaysShowLabel = true
                         )
                     }
                 }
             }
         }
 
-        IconButton(
-            onClick = { navController.navigate(BottomNavItem.Music.route) },
+        // Center FAB (Camera)
+        AnimatedVisibility(
+            visible = isBottomBarVisible,
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it }),
             modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 16.dp, bottom = if (isBottomBarVisible) 120.dp else 32.dp)
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(Color.White)
-                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                .align(Alignment.BottomCenter)
+
         ) {
-            Icon(
-                painter = painterResource(id = R.drawable.vinyl_disc), // You can use a vinyl or music icon
-                contentDescription = "Music",
-                modifier = Modifier.size(28.dp)
-            )
+            FloatingActionButton(
+                onClick = {
+                    if (currentRoute == BottomNavItem.Clicks.route) {
+                        cameraClickViewModel.triggerCapture()
+                    } else {
+                        navController.navigate(BottomNavItem.Clicks.route) {
+                            launchSingleTop = true
+                        }
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = (-42).dp)
+                    .size(64.dp),
+                shape = CircleShape,
+                elevation = FloatingActionButtonDefaults.elevation(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    contentDescription = "Clicks",
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.White
+                )
+            }
         }
 
+        val animatedBottomPadding1 by animateDpAsState(
+            targetValue = if (isBottomBarVisible) 110.dp else 30.dp,
+            label = "fab_bottom_padding"
+        )
 
-        // Toggle Button to show/hide BottomBar
-        IconButton(
-            onClick = { isBottomBarVisible = !isBottomBarVisible },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = if (isBottomBarVisible) 100.dp else 32.dp)
-                .background(Color.White, shape = CircleShape)
-                .size(40.dp)
-        ) {
-            Icon(
-                imageVector = if (isBottomBarVisible)
-                    Icons.Default.KeyboardArrowDown
-                else
-                    Icons.Default.KeyboardArrowUp,
-                contentDescription = if (isBottomBarVisible) "Hide" else "Show"
-            )
-        }
+            // Bottom Left FAB (Music)
+            FloatingActionButton(
+                onClick = { navController.navigate(BottomNavItem.Music.route) },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 20.dp, bottom = animatedBottomPadding1)
+                    .size(48.dp),
+                shape = CircleShape,
+
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.vinyl_disc),
+                    contentDescription = "Music",
+                    modifier = Modifier.size(24.dp),
+                    tint = Color.White
+                )
+            }
+
+
+        val animatedBottomPadding2 by animateDpAsState(
+            targetValue = if (isBottomBarVisible) 80.dp else 30.dp,
+            label = "fab_bottom_padding"
+        )
+
+            // Bottom Right FAB (Toggle Bottom Bar)
+            FloatingActionButton(
+                onClick = { isBottomBarVisible = !isBottomBarVisible },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 20.dp, bottom = animatedBottomPadding2)
+                    .size(34.dp),
+                shape = CircleShape,
+
+            ) {
+                Icon(
+                    imageVector = if (isBottomBarVisible)
+                        Icons.Default.KeyboardArrowDown
+                    else
+                        Icons.Default.KeyboardArrowUp,
+                    contentDescription = "Toggle Bottom Bar",
+                    tint = Color.White
+                )
+            }
+
+
     }
 }
 

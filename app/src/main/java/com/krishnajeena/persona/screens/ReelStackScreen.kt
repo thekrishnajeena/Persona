@@ -10,16 +10,20 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -45,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -53,7 +58,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.krishnajeena.persona.reelstack.VideoViewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -95,7 +99,7 @@ fun VideoPagerScreen(viewModel: VideoViewModel) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { videoPickerLauncher.launch("video/*") },
-
+                modifier = Modifier.padding(bottom = 80.dp)
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add Video")
             }
@@ -133,12 +137,12 @@ fun VideoPagerScreen(viewModel: VideoViewModel) {
                             enableDismissFromStartToEnd = false,
                             enableDismissFromEndToStart = true,
                             backgroundContent = { DismissBackground(dismissState) },
+
                         ) {
                             VideoPlayerScreen(
-                            viewModel = viewModel,
-                            videoUri = videoUris[page % videoUris.size].uri,
-                            isVisible = pagerState.currentPage == page
-                        )
+                                videoUri = videoUris[page % videoUris.size].uri,
+                                isVisible = pagerState.currentPage == page
+                            )
                         }
                     }
                 }
@@ -151,7 +155,7 @@ fun VideoPagerScreen(viewModel: VideoViewModel) {
 }
 
 @Composable
-fun VideoPlayerScreen(viewModel: VideoViewModel, videoUri: String, isVisible: Boolean) {
+fun VideoPlayerScreen(videoUri: String, isVisible: Boolean) {
     val context = LocalContext.current
     val exoPlayer = remember { ExoPlayer.Builder(context).build() } // Single ExoPlayer instance
     val isPlaying = remember { mutableStateOf(false) }
@@ -216,6 +220,7 @@ fun VideoPlayerScreen(viewModel: VideoViewModel, videoUri: String, isVisible: Bo
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.Black)
             .clickable {
                 isPlaying.value = !isPlaying.value
                 exoPlayer.playWhenReady = isPlaying.value
@@ -257,5 +262,34 @@ fun VideoPlayerScreen(viewModel: VideoViewModel, videoUri: String, isVisible: Bo
                 )
             }
         }
+
+        IconButton(
+            onClick = {
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "video/*"
+                    putExtra(Intent.EXTRA_STREAM, videoUri.toUri())
+                    putExtra(
+                        Intent.EXTRA_TEXT,
+                        "Shared from Persona 📱\nCheck this out!"
+                    )
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                val chooser = Intent.createChooser(shareIntent, "Share video via")
+                context.startActivity(chooser)
+            },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(12.dp)
+                .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                .size(36.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Share,
+                contentDescription = "Share Video",
+                tint = Color.White,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
     }
 }

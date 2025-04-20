@@ -356,7 +356,6 @@ navController.navigate("bookOpen/${Uri.encode(name.toUri().toString())}")
 fun DismissBackground(dismissState: SwipeToDismissBoxState) {
     val color = when (dismissState.dismissDirection) {
         SwipeToDismissBoxValue.StartToEnd -> Color(0xFFFFFFFF)
-    //    SwipeToDismissBoxValue.EndToStart -> Color(0xFF1DE9B6)
         else  -> Color.Transparent
     }
 Card(modifier = Modifier
@@ -367,7 +366,7 @@ Card(modifier = Modifier
         modifier = Modifier
             .fillMaxSize()
             .background(color)
-            .padding(12.dp, 8.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {

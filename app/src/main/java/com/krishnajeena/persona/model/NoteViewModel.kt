@@ -93,7 +93,16 @@ class NoteViewModel @Inject constructor(
                 }
             }
 
-            is NoteEvent.EditNote -> TODO()
+            is NoteEvent.EditNote -> {
+                viewModelScope.launch {
+                    val updatedNote = event.note.copy(
+                        title = event.updatedTitle,
+                        discription = event.updatedDescription
+                    )
+                    dao.upsert(updatedNote)
+                }
+            }
+
         }
     }
     }

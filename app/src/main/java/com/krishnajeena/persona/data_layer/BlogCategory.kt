@@ -9,6 +9,11 @@ data class BlogResponse(
     val categories: List<BlogCategory>
 )
 
+@Serializable
+data class ArticleCategoriesResponse(
+    val articlesCategories: List<String>
+)
+
 
 @Serializable
 data class BlogCategory(

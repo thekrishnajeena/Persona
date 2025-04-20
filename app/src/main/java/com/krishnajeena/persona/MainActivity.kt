@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
         lifecycle.addObserver(AppLifecycleObserver(this))
 
         setContent {
-            PersonaApp(sharedViewModel)
+            PersonaApp()
         }
     }
 

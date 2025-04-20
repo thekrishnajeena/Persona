@@ -10,5 +10,9 @@ sealed interface NoteEvent {
 
     data class UpdateNotePosition(val id: Int, val newOffset: Offset) : NoteEvent
     data class UpdateNoteSize(val id: Int, val newSize: Offset) : NoteEvent
-    data class EditNote(val note: Note) : NoteEvent
+    data class EditNote(
+        val note: Note,
+        val updatedTitle: String,
+        val updatedDescription: String
+    ) : NoteEvent
 }

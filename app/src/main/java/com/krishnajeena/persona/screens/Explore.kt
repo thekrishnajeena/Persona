@@ -46,7 +46,7 @@ import com.krishnajeena.persona.model.ExploreViewModel
 @Composable
 fun ExploreScreen(
     modifier: Modifier = Modifier,
-    onCategoryClick: (List<BlogItem>) -> Unit,
+    onCategoryClick: (List<BlogItem>, String) -> Unit,
     navController: NavHostController
 ) {
     val viewModel: ExploreViewModel = viewModel()
@@ -54,10 +54,11 @@ fun ExploreScreen(
     val articlesViewModel: ArticlesViewModel = viewModel()
 
     val categories = viewModel.categories
+    val categoriesArticles = viewModel.articlesCategories
 
     val loading = viewModel.isLoading
 
-    val categoriesArticles = listOf("entrepreneurship", "AI", "careers", "android", "react", "ai", "webdev", "space")
+
     val selected = articlesViewModel.selectedCategory
     val articles = articlesViewModel.articles
     val isLoading = viewModel.isLoading
@@ -84,7 +85,7 @@ fun ExploreScreen(
                             BlogsCategoryItem(
                                 title = category.name,
                                 image = category.image,
-                                onClick = { onCategoryClick(category.blogs) }
+                                onClick = { onCategoryClick(category.blogs, category.name) }
                             )
                         }
                     }

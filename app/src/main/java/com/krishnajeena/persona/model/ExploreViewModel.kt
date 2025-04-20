@@ -39,12 +39,15 @@ class ExploreViewModel : ViewModel() {
     var categories by mutableStateOf<List<BlogCategory>>(emptyList())
         private set
 
+    var articlesCategories by mutableStateOf<List<String>>(emptyList())
+        private set
+
     var isLoading by mutableStateOf(true)
         private set
 
     init {
-        Log.i("TAG::::", "Inside Init")
         fetchCategories()
+        fetchArticlesCategories()
     }
 
     fun fetchCategories() {
@@ -56,6 +59,20 @@ class ExploreViewModel : ViewModel() {
             } catch (e: Exception) {
                 Log.e("API_ERROR", "Error fetching categories: ${e.message}")
             } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun fetchArticlesCategories(){
+        viewModelScope.launch{
+            isLoading = true
+            try {
+                val response = RetrofitInstance.api.getArticlesCategories()
+                articlesCategories = response.articlesCategories
+            } catch(e: Exception){
+                Log.e("API_ERROR", "Error fetching articles categories: ${e.message}")
+            } finally{
                 isLoading = false
             }
         }
