@@ -67,7 +67,7 @@ import java.io.File
 import java.io.FileOutputStream
 
 @Composable
-fun DailyCameraScreen( //viewModel: CameraPhotoViewModel = viewModel()
+fun DailyCameraScreen(
     navController: NavController,
     viewModel: CameraClickViewModel
 ) {

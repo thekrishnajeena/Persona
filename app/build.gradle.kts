@@ -15,8 +15,8 @@ android {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
         targetSdk = 34
-        versionCode = 13
-        versionName = "2.1.2"
+        versionCode = 14
+        versionName = "3.0.0"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -160,12 +160,12 @@ implementation("com.google.accompanist:accompanist-permissions:0.32.0")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.3")
 
     // For HTTP client
-    implementation("io.ktor:ktor-client-core:2.3.0")
-    implementation("io.ktor:ktor-client-cio:2.3.0")
-    implementation("io.ktor:ktor-client-serialization:2.3.0")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.3")
+    implementation("io.ktor:ktor-client-core:2.3.4")
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.serialization)
+    implementation(libs.ktor.client.content.negotiation)
 // For kotlinx.serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation(libs.kotlinx.serialization.json)
 
     implementation("io.ktor:ktor-client-android:2.3.4")
 

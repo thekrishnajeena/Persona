@@ -88,7 +88,7 @@ import java.net.URLConnection
 
 
 @RequiresApi(Build.VERSION_CODES.R)
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun StudyScreen() {
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -111,7 +111,7 @@ fun StudyScreen() {
         ) {
             composable("blogs") {
                 isWebOpen = false
-                val tabTitles = listOf("My Blogs", "My Notes")
+                val tabTitles = listOf("My Blogs", "My Notes", "Books")
                 val pagerState = rememberPagerState(initialPage = 0,
                     pageCount = { tabTitles.size })
                 val coroutineScope = rememberCoroutineScope()
@@ -137,14 +137,13 @@ fun StudyScreen() {
                     ) { page ->
                         when (page) {
                             0 -> MyBlogsSection(
-                                showBottomSheet = showBottomSheet,
                                 setShowBottomSheet = { showBottomSheet = it },
                                 isWebOpen = isWebOpen,
-                                setIsWebOpen = { isWebOpen = it },
                                 navController = navController,
                                 context = context
                             )
                             1 -> NotesScreen()
+                            2-> BooksScreen()
                         }
                     }
                 }
@@ -168,10 +167,8 @@ fun StudyScreen() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyBlogsSection(
-    showBottomSheet: Boolean,
     setShowBottomSheet: (Boolean) -> Unit,
     isWebOpen: Boolean,
-    setIsWebOpen: (Boolean) -> Unit,
     navController: NavHostController,
     context: Context
 ) {
@@ -288,7 +285,7 @@ fun formatUrl(url: String): String? {
         null // Empty URL
     }
 }
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun BlogsItem(
     blogUrlViewModel: BlogUrlViewModel,
