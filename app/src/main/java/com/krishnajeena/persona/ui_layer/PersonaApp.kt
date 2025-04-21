@@ -1,17 +1,15 @@
 package com.krishnajeena.persona.ui_layer
 
-import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -19,9 +17,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,8 +44,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -61,12 +61,14 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -75,6 +77,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,9 +88,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -99,7 +99,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.data_layer.BlogItem
 import com.krishnajeena.persona.model.BlogUrlViewModel
@@ -124,19 +123,22 @@ import kotlinx.coroutines.launch
 import soup.compose.photo.ExperimentalPhotoApi
 import soup.compose.photo.PhotoBox
 import java.io.File
+import java.util.Date
+
 
 @RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPhotoApi::class)
 @Composable
 fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel()) {
-    PersonaTheme {
+
+    var isDark by rememberSaveable { mutableStateOf(false) }
+
+    PersonaTheme(darkTheme = isDark) {
         val navController = rememberNavController()
         var title by remember { mutableStateOf("Persona") }
         val context = LocalContext.current
 
         val cameraClickViewModel: CameraClickViewModel = hiltViewModel<CameraClickViewModel>()
-
-        HandlePermissions(context)
 
         BackHandler(enabled = true) {
             if (navController.currentDestination?.route != "mainScreen") {
@@ -166,6 +168,12 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel()) {
                 TopAppBar(
                     title = { Text(title) },
                     actions = {
+                        IconButton(onClick = { isDark = !isDark }) {
+                            Icon(
+                                imageVector = if (isDark) Icons.Default.WbSunny else Icons.Default.DarkMode,
+                                contentDescription = "Toggle Theme"
+                            )
+                        }
                         IconButton(onClick = { showPopup = true }) {
                             Icon(
                                 imageVector = Icons.Default.AccountCircle,
@@ -306,19 +314,78 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel()) {
                     }
         }
 
-        composable(
-            "openPersonaImage/{imageUri}",
-            arguments = listOf(navArgument("imageUri") { type = NavType.StringType })
-        )
-        { backStackEntry ->
-            val imageUri = backStackEntry.arguments?.getString("imageUri")
-            if (imageUri != null) {
-                PhotoBox {
-                    AsyncImage(model = imageUri, contentDescription = null, modifier = Modifier.fillMaxSize()
-                        .padding(bottom = 100.dp))
+                composable(
+                    "openPersonaImage/{imageUri}",
+                    arguments = listOf(navArgument("imageUri") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val context = LocalContext.current
+                    val imageUriString = backStackEntry.arguments?.getString("imageUri")
+                    val imageUri = imageUriString?.let { Uri.parse(it) }
+
+                    rememberCoroutineScope()
+                    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+                    var showSheet by remember { mutableStateOf(false) }
+
+                    if (imageUri != null) {
+                        if (showSheet) {
+                            ModalBottomSheet(
+                                onDismissRequest = { showSheet = false },
+                                sheetState = bottomSheetState
+                            ) {
+                                // Fetch file info
+                                val file = File(imageUri.path ?: "")
+                                val name = file.name
+                                val size = file.length() / 1024 // size in KB
+                                val location = file.absolutePath
+                                val lastModified = Date(file.lastModified()).toString()
+
+                                Column(Modifier.padding(16.dp)) {
+                                    Text("File Name: $name")
+                                    Text("Size: ${size}KB")
+                                    Text("Location: $location")
+                                    Text("Last Updated: $lastModified")
+                                }
+                            }
+                        }
+
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            PhotoBox {
+                            AsyncImage(
+                                model = imageUri,
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(bottom = 100.dp)
+                            )
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(16.dp)
+                            ) {
+                                IconButton(onClick = {
+                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "image/*"
+                                        putExtra(Intent.EXTRA_STREAM, imageUri)
+                                        putExtra(Intent.EXTRA_TEXT, "Shared from Persona 📱\nCheck this out!")
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(intent, "Share image via"))
+                                }) {
+                                    Icon(Icons.Default.Share, contentDescription = "Share")
+                                }
+
+                                IconButton(onClick = { showSheet = true }) {
+                                    Icon(Icons.Default.Info, contentDescription = "Details")
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-        }
+
 
             }
 
@@ -399,6 +466,7 @@ Column(modifier = Modifier.fillMaxSize().padding(16.dp)){
 
 
 
+@SuppressLint("SuspiciousIndentation")
 @Composable
 fun BottomBar(navController: NavController, cameraClickViewModel: CameraClickViewModel) {
     val items = listOf(
@@ -414,7 +482,10 @@ fun BottomBar(navController: NavController, cameraClickViewModel: CameraClickVie
 
     var isBottomBarVisible by remember { mutableStateOf(true) }
 
-    LocalContext.current
+    val context = LocalContext.current
+    val isGesture = remember{
+        isGestureNavigationEnabled(context)
+    }
     File(
         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
         "Persona/Clicks"
@@ -483,7 +554,7 @@ fun BottomBar(navController: NavController, cameraClickViewModel: CameraClickVie
                 containerColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .offset(y = (-42).dp)
+                    .offset(y = if(isGesture) (-42).dp else (-72).dp)
                     .size(64.dp),
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(8.dp)
@@ -498,7 +569,7 @@ fun BottomBar(navController: NavController, cameraClickViewModel: CameraClickVie
         }
 
         val animatedBottomPadding1 by animateDpAsState(
-            targetValue = if (isBottomBarVisible) 110.dp else 30.dp,
+            targetValue = if (isBottomBarVisible) {if(isGesture) 110.dp else 140.dp} else {if(isGesture) 30.dp else 50.dp},
             label = "fab_bottom_padding"
         )
 
@@ -522,7 +593,7 @@ fun BottomBar(navController: NavController, cameraClickViewModel: CameraClickVie
 
 
         val animatedBottomPadding2 by animateDpAsState(
-            targetValue = if (isBottomBarVisible) 80.dp else 30.dp,
+            targetValue = if (isBottomBarVisible) {if(isGesture) 80.dp else 110.dp} else {if(isGesture) 30.dp else 50.dp},
             label = "fab_bottom_padding"
         )
 
@@ -550,117 +621,16 @@ fun BottomBar(navController: NavController, cameraClickViewModel: CameraClickVie
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun PersonaItem(name: Pair<String, Int>, navController: NavController) {
-    val context = LocalContext.current
+fun isGestureNavigationEnabled(context: Context): Boolean{
 
-    val folder = File(context.getExternalFilesDir(null), "PersonaClicks")
-    if (!folder.exists()) folder.mkdirs()
-
-// Create a file and corresponding Uri
-    val imageFile = File(folder, "IMG_${System.currentTimeMillis()}.jpg")
-    val imageUri = FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.provider",
-        imageFile
-    )
-
-// Updated camera launcher
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            // Handle the full-resolution image stored at `imageUri`
-            CoroutineScope(Dispatchers.IO).launch {
-                saveImageToPersonaUri(context, imageUri) // Optional custom save logic
-            }
-        } else {
-            Toast.makeText(context, "Image capture failed", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxSize(0.8f)
-            .height(200.dp)
-            .padding(5.dp)
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxSize(0.8f)
-                .combinedClickable(
-                    onClick = {
-                        if (name.first == "Clicks") {
-                            cameraLauncher.launch(imageUri)
-                        } else {
-                            navController.navigate(name.first.lowercase())
-                        }
-                    },
-                    onLongClick = {
-                        if (name.first == "Clicks") {
-                            navController.navigate(name.first.lowercase())
-                        }
-                    }
-                )
+    return try{
+        val mode = Settings.Secure.getInt(
+            context.contentResolver,
+            "navigation_mode"
         )
-        {
+        mode == 2
+    } catch(e : Settings.SettingNotFoundException){
+        false
+    }
 
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(name.second)  // The image URL or resource
-                    .crossfade(true)  // Enable smooth transition effect when loading
-                    .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.Center
-            )
-        }
-        Text(text = name.first, fontSize = 20.sp)
-    }
-}
-
-@Composable
-fun HandlePermissions(context: Context) {
-    val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-    val arePermissionsGranted = permissions.all { permission ->
-        ContextCompat.checkSelfPermission(context, permission) ==
-                PackageManager.PERMISSION_GRANTED
-    }
-    val requestPermissionsLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissionsMap ->
-        val allGranted = permissionsMap.all { it.value }
-        Toast.makeText(
-            context,
-            if (allGranted) "All Permissions Granted" else "Permissions Denied",
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-    LaunchedEffect(Unit) {
-        if (!arePermissionsGranted) {
-            requestPermissionsLauncher.launch(permissions)
-        }
-    }
-}
-fun saveImageToPersonaUri(context: Context, imageUri: Uri) {
-    val contentResolver = context.contentResolver
-
-    try {
-        val inputStream = contentResolver.openInputStream(imageUri)
-        inputStream?.use {
-            // Optionally read or validate the image content
-        }
-
-        CoroutineScope(Dispatchers.Main).launch {
-            Toast.makeText(context, "Image saved to PersonaClicks!", Toast.LENGTH_SHORT).show()
-        }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        CoroutineScope(Dispatchers.Main).launch {
-            Toast.makeText(context, "Failed to save the image!", Toast.LENGTH_SHORT).show()
-        }
-    }
 }

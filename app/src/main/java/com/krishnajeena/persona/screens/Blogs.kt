@@ -1,9 +1,12 @@
 package com.krishnajeena.persona.screens
 
+import android.Manifest
+import android.app.Activity
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
@@ -68,6 +71,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -96,9 +100,6 @@ fun StudyScreen() {
 
     val context = LocalContext.current
     val navController = rememberNavController()
-
-    val tabs = listOf("My Blogs", "Explore")
-    var selectedTab by remember { mutableStateOf(0) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -331,6 +332,7 @@ SwipeToDismissBox(
     }
 }
 }
+
 @RequiresApi(Build.VERSION_CODES.R)
 @Composable
 fun WebViewItem(url: String) {
@@ -339,17 +341,6 @@ fun WebViewItem(url: String) {
     val context = LocalContext.current
 
     val webView = remember { WebView(context) }
-
-    // Check if the app has the necessary permissions
-    val hasStoragePermission = Environment.isExternalStorageManager() // For Android 11 and above
-
-    // Request permission if needed
-    if (!hasStoragePermission) {
-        val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-            data = Uri.parse("package:" + context.packageName)
-        }
-        context.startActivity(intent)
-    }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AndroidView(
@@ -388,22 +379,28 @@ fun WebViewItem(url: String) {
                     setDownloadListener { downloadUrl, _, contentDisposition, mimeType, _ ->
                         val fileName = URLUtil.guessFileName(downloadUrl, contentDisposition, mimeType)
 
-                        // Check if permissions are granted before downloading
-                        if (hasStoragePermission) {
-                            val downloadDir = File(
-                                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                                "Persona/MyBooks"
-                            )
-                            if (!downloadDir.exists()) {
-                                val success = downloadDir.mkdirs()
-                                if (success) {
+                        // Ensure only necessary permission is requested (Scoped storage or WRITE_EXTERNAL_STORAGE)
+                        if (ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                            ) == PackageManager.PERMISSION_GRANTED) {
+
+                            // Define your app-specific download folder
+                            val downloadDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)?.let {
+                                File(it, "Persona/MyBooks")
+                            }
+
+                            // Make sure the directory exists
+                            if (downloadDir?.exists() != true) {
+                                val success = downloadDir?.mkdirs()
+                                if (success == true) {
                                     Log.d("Download", "Folder created successfully.")
                                 } else {
                                     Log.e("Download", "Failed to create folder.")
                                 }
                             }
 
-                            // ✅ Guess the file name using URLUtil and fallback MIME type if null or unknown
+                            // Guess mime type and file name
                             val resolvedMimeType = mimeType ?: URLConnection.guessContentTypeFromName(downloadUrl) ?: "application/pdf"
                             val guessedFileName = URLUtil.guessFileName(downloadUrl, contentDisposition, resolvedMimeType)
 
@@ -412,11 +409,14 @@ fun WebViewItem(url: String) {
                                 setDescription("Downloading book...")
                                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
 
-                                // ✅ Save to Downloads/Persona/MyBooks with correct name
-                                setDestinationInExternalPublicDir(
-                                    Environment.DIRECTORY_DOWNLOADS,
-                                    "Persona/MyBooks/$guessedFileName"
-                                )
+                                // Save to app-specific folder using Scoped Storage
+                                downloadDir?.let { dir ->
+                                    setDestinationInExternalFilesDir(
+                                        context,
+                                        Environment.DIRECTORY_DOWNLOADS,
+                                        "Persona/MyBooks/$guessedFileName"
+                                    )
+                                }
 
                                 setMimeType(resolvedMimeType)
                                 setAllowedOverMetered(true)
@@ -439,9 +439,13 @@ fun WebViewItem(url: String) {
 
                             Toast.makeText(context, "Downloading $guessedFileName", Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, "Permission is required to download the file", Toast.LENGTH_SHORT).show()
+                            // Request permission to write to storage only when needed
+                            ActivityCompat.requestPermissions(
+                                context as Activity,
+                                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                                1001 // Your request code here
+                            )
                         }
-
                     }
 
                     loadUrl(url)
@@ -474,4 +478,3 @@ fun WebViewItem(url: String) {
         }
     }
 }
-

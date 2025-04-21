@@ -1,11 +1,13 @@
 package com.krishnajeena.persona
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import com.krishnajeena.persona.model.SharedViewModel
 import com.krishnajeena.persona.reelstack.VideoDatabase
 import com.krishnajeena.persona.services.MusicService
@@ -20,6 +22,7 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var database: VideoDatabase
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

@@ -1,6 +1,8 @@
 package com.krishnajeena.persona.screens
 
 import android.Manifest
+import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Matrix
@@ -100,7 +102,6 @@ fun ClicksScreen(navController: NavController, viewModel: CameraClickViewModel) 
 
     LaunchedEffect(captureTrigger) {
         if (captureTrigger) {
-            Log.i("CameraDebug", "Capture Triggered")
             val photoFile = File.createTempFile("temp_image", ".jpg", context.cacheDir)
             val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
@@ -259,18 +260,11 @@ fun ClicksScreen(navController: NavController, viewModel: CameraClickViewModel) 
                     }
 
                     IconButton(onClick = {
-                        // ✅ Save to PersonaClicks folder here
-                        val folder = if (Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED) {
-                            File(context.getExternalFilesDir(null), "PersonaClicks")
-                        } else {
-                            File(context.filesDir, "PersonaClicks")
-                        }
-                        if (!folder.exists()) folder.mkdirs()
 
-                        val destFile = File(folder, "IMG_${System.currentTimeMillis()}.jpg")
-
+                        // ✅ Get the original bitmap from URI
                         val originalBitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
 
+                        // ✅ Flip the image if needed
                         val finalBitmap = if (flip) {
                             val matrix = Matrix().apply { preScale(-1f, 1f) }
                             Bitmap.createBitmap(originalBitmap, 0, 0, originalBitmap.width, originalBitmap.height, matrix, true)
@@ -278,20 +272,47 @@ fun ClicksScreen(navController: NavController, viewModel: CameraClickViewModel) 
                             originalBitmap
                         }
 
-                        // Save the final bitmap
-                        FileOutputStream(destFile).use { out ->
-                            finalBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-                        }
+                        // ✅ Save using MediaStore (Downloads/PersonaClicks)
+                        val fileName = "IMG_${System.currentTimeMillis()}"
+                        saveImageToDownloads(context, finalBitmap, fileName)
 
-                        Toast.makeText(context, "Image saved", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Image saved to Downloads/PersonaClicks", Toast.LENGTH_SHORT).show()
 
                         viewModel.clearCapturedImage()
-                    }) {
+                    }
+                    ) {
                         Icon(Icons.Default.Check, contentDescription = "Save", tint = Color.White)
                     }
                 }
             }
         }
 
+    }
+}
+
+fun saveImageToDownloads(context: Context, bitmap: Bitmap, fileName: String) {
+    val resolver = context.contentResolver
+
+    val contentValues = ContentValues().apply {
+        put(MediaStore.Downloads.DISPLAY_NAME, "$fileName.jpg")
+        put(MediaStore.Downloads.MIME_TYPE, "image/jpeg")
+        put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/PersonaClicks")
+        put(MediaStore.Downloads.IS_PENDING, 1)
+    }
+
+    val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+    val uri = resolver.insert(collection, contentValues)
+
+    uri?.let {
+        resolver.openOutputStream(it).use { outputStream ->
+            if (outputStream != null) {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            }
+        }
+
+        // Mark as not pending (important for visibility)
+        contentValues.clear()
+        contentValues.put(MediaStore.Downloads.IS_PENDING, 0)
+        resolver.update(uri, contentValues, null, null)
     }
 }

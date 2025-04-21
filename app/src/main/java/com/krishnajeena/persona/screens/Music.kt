@@ -37,9 +37,6 @@ import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.krishnajeena.persona.GetCustomContents
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.components.HomeEvent
@@ -69,12 +66,14 @@ fun MusicScreen(sharedViewModel: SharedViewModel) {
 
             }
             mainViewModel.homeUiState.copy(songs = musicViewModel.musicList.value?.map { Song(it.name, it.toUri().toString()) })
+            mainViewModel.onEvent(
+                HomeEvent.SetSongs(musicViewModel.musicList.value?.map { Song(it.name, it.toUri().toString()) } ?: emptyList())
+            )
+
         }
     )
 
     val musicControllerUiState = sharedViewModel.musicControllerUiState
-
-    LaunchedEffect(isPlaying) { Log.i("TAG", isPlaying.toString()) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -138,9 +137,6 @@ fun MusicListContent(
 
     ) {
 
-        LocalContext.current
-        val retriever = MediaMetadataRetriever()
-
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -167,9 +163,9 @@ fun MusicListContent(
                     onClick = {
                         onEvent(HomeEvent.OnSongSelected(music))
                         onEvent(HomeEvent.PlaySong)
+
                     },
-                    mainViewModel = mainViewModel,
-                    retriever
+                    mainViewModel = mainViewModel
                 )
             }
         }
@@ -184,8 +180,7 @@ fun MusicItem(
     fileUri: Uri,
     musicViewModel: MusicViewModel,
     onClick: () -> Unit,
-    mainViewModel: HomeViewModel,
-    retriever: MediaMetadataRetriever
+    mainViewModel: HomeViewModel
 ) {
 
 
@@ -262,7 +257,7 @@ fun BottomPlaybackController(
         ) {
             // Display the current song title
             Text(
-                text = "${song?.title}",
+                text = song?.title ?: "Select a music to play!",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
@@ -303,7 +298,3 @@ fun BottomPlaybackController(
 
 
 
-@Composable
-fun MusicPlayerScreen() {
-    // Placeholder for the Music Player Screen implementation
-}

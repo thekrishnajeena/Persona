@@ -32,7 +32,10 @@ class HomeViewModel @Inject constructor(
 
     fun onEvent(event: HomeEvent) {
         when (event) {
-            HomeEvent.PlaySong -> playSong()
+            HomeEvent.PlaySong -> {
+                addMediaItemsUseCase(homeUiState.songs!!)
+                playSong()
+            }
 
             HomeEvent.PauseSong -> pauseSong()
 
@@ -42,6 +45,11 @@ class HomeViewModel @Inject constructor(
 
             is HomeEvent.OnSongSelected -> homeUiState =
                 homeUiState.copy(selectedSong = event.selectedSong)
+
+            is HomeEvent.SetSongs -> {
+                homeUiState = homeUiState.copy(songs = event.songs)
+            }
+
 
         }
     }

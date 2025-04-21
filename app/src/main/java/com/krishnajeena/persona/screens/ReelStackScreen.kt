@@ -1,7 +1,6 @@
 package com.krishnajeena.persona.screens
 
 import android.app.Activity
-import android.content.ContentResolver
 import android.content.Intent
 import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -56,14 +55,12 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.krishnajeena.persona.reelstack.VideoViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun ReelScreen(modifier: Modifier = Modifier) {
+fun ReelScreen() {
 
     val viewModel: VideoViewModel = hiltViewModel()
 
@@ -85,11 +82,16 @@ fun VideoPagerScreen(viewModel: VideoViewModel) {
         contract = ActivityResultContracts.GetMultipleContents(),
         onResult = { uris ->
             uris.forEach { uri ->
-                val contentResolver: ContentResolver = context.contentResolver
-                contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
+                        try {
+                            context.contentResolver.takePersistableUriPermission(
+                                uri,
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                        } catch (e: SecurityException) {
+                            e.printStackTrace() // Some URIs may not be persistable, and that's okay
+                        }
+
+
                 viewModel.addVideoUri(uri.toString()) // Add to Room DB
             }
         }

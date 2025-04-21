@@ -1,14 +1,17 @@
 package com.krishnajeena.persona.model
 
+import android.app.Application
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.krishnajeena.persona.data_layer.BlogCategory
 import com.krishnajeena.persona.data_layer.BlogResponse
 import com.krishnajeena.persona.network.RetrofitInstance
+import com.krishnajeena.persona.other.NetworkMonitor
 import io.ktor.client.engine.cio.CIO
 
 import io.ktor.client.plugins.contentnegotiation.*
@@ -22,9 +25,11 @@ import io.ktor.util.InternalAPI
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 
-class ExploreViewModel : ViewModel() {
+class ExploreViewModel(application: Application) : AndroidViewModel(application) {
     private val client = HttpClient(Android) {
         install(ContentNegotiation) {
             json(Json {
@@ -35,6 +40,10 @@ class ExploreViewModel : ViewModel() {
         }
     }
 
+    private val networkMonitor = NetworkMonitor(application.applicationContext)
+
+    private val _isConnected = MutableStateFlow(true)
+    val isConnected: StateFlow<Boolean> = _isConnected
 
     var categories by mutableStateOf<List<BlogCategory>>(emptyList())
         private set
@@ -46,8 +55,15 @@ class ExploreViewModel : ViewModel() {
         private set
 
     init {
-        fetchCategories()
-        fetchArticlesCategories()
+        viewModelScope.launch {
+            networkMonitor.isConnected.collect { connected ->
+                _isConnected.value = connected
+                if (connected && categories.isEmpty()) {
+                    fetchCategories()
+                    fetchArticlesCategories()
+                }
+            }
+        }
     }
 
     fun fetchCategories() {
@@ -81,5 +97,6 @@ class ExploreViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         client.close()
+        networkMonitor.unregisterCallback()
     }
 }

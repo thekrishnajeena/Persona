@@ -15,8 +15,8 @@ android {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
         targetSdk = 34
-        versionCode = 14
-        versionName = "3.0.0"
+        versionCode = 16
+        versionName = "3.1.1"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -168,5 +168,6 @@ implementation("com.google.accompanist:accompanist-permissions:0.32.0")
     implementation(libs.kotlinx.serialization.json)
 
     implementation("io.ktor:ktor-client-android:2.3.4")
+    implementation ("com.google.accompanist:accompanist-placeholder-material:0.34.0")
 
 }
