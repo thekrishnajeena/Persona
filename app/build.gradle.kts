@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("com.google.dagger.hilt.android")
     id("kotlin-kapt")
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0"
 
 }
 
@@ -14,8 +15,8 @@ android {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
         targetSdk = 34
-        versionCode = 13
-        versionName = "2.1.2"
+        versionCode = 16
+        versionName = "3.1.1"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -70,6 +71,7 @@ dependencies {
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.firebase.crashlytics.buildtools)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -146,5 +148,26 @@ implementation("com.google.accompanist:accompanist-permissions:0.32.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
 
     implementation("androidx.compose.foundation:foundation:1.5.0")
+
+    implementation ("androidx.camera:camera-camera2:1.4.2")
+    implementation ("androidx.camera:camera-lifecycle:1.4.2")
+    implementation ("androidx.camera:camera-view:1.4.2")
+    // For Compose integration if needed
+    implementation (libs.androidx.lifecycle.runtime.ktx.v261)
+
+    implementation ("androidx.camera:camera-extensions:1.4.2")
+
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.3")
+
+    // For HTTP client
+    implementation("io.ktor:ktor-client-core:2.3.4")
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.serialization)
+    implementation(libs.ktor.client.content.negotiation)
+// For kotlinx.serialization
+    implementation(libs.kotlinx.serialization.json)
+
+    implementation("io.ktor:ktor-client-android:2.3.4")
+    implementation ("com.google.accompanist:accompanist-placeholder-material:0.34.0")
 
 }

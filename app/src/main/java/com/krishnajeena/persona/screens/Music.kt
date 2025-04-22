@@ -1,5 +1,6 @@
 package com.krishnajeena.persona.screens
 
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.annotation.OptIn
@@ -23,7 +24,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,10 +37,6 @@ import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
-import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.krishnajeena.persona.GetCustomContents
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.components.HomeEvent
@@ -48,24 +47,14 @@ import com.krishnajeena.persona.ui_states.PlayerState
 import com.krishnajeena.persona.model.SharedViewModel
 import com.krishnajeena.persona.data_layer.Song
 
-@Composable
-fun MusicScreen(modifier: Modifier = Modifier, sharedViewModel: SharedViewModel) {
-
-    val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "musicList") {
-        composable("musicList") { MusicListScreen(navController, sharedViewModel) }
-        composable("musicPlayer") { MusicPlayerScreen() }
-    }
-}
 
 @OptIn(UnstableApi::class)
 @Composable
-fun MusicListScreen(navController: NavController, sharedViewModel: SharedViewModel) {
+fun MusicScreen(sharedViewModel: SharedViewModel) {
 
     val musicViewModel: MusicViewModel = hiltViewModel()
     val musicList by musicViewModel.musicList.observeAsState(emptyList())
     val isPlaying by musicViewModel.isPlaying.observeAsState(false)
-    val currentSong by musicViewModel.currentSong.observeAsState("No Song Playing")
 
     val mainViewModel: HomeViewModel = hiltViewModel()
 
@@ -77,12 +66,14 @@ fun MusicListScreen(navController: NavController, sharedViewModel: SharedViewMod
 
             }
             mainViewModel.homeUiState.copy(songs = musicViewModel.musicList.value?.map { Song(it.name, it.toUri().toString()) })
+            mainViewModel.onEvent(
+                HomeEvent.SetSongs(musicViewModel.musicList.value?.map { Song(it.name, it.toUri().toString()) } ?: emptyList())
+            )
+
         }
     )
 
     val musicControllerUiState = sharedViewModel.musicControllerUiState
-
-    LaunchedEffect(isPlaying) { Log.i("TAG", isPlaying.toString()) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -91,7 +82,7 @@ fun MusicListScreen(navController: NavController, sharedViewModel: SharedViewMod
             FloatingActionButton(
                 onClick = { musicPickerLauncher.launch("audio/*") },
                 elevation = FloatingActionButtonDefaults.elevation(10.dp),
-                modifier = Modifier.padding(10.dp)
+                modifier = Modifier.padding(bottom = 80.dp)
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = null)
             }
@@ -101,12 +92,8 @@ fun MusicListScreen(navController: NavController, sharedViewModel: SharedViewMod
             EmptyStateScreen()
         } else {
 
-
-
-
             MusicListContent(
                 musicViewModel = musicViewModel,
-                currentSong = currentSong,
                 musicControllerUiState = musicControllerUiState,
                 onEvent = mainViewModel::onEvent,
                 mainViewModel = mainViewModel
@@ -128,7 +115,6 @@ fun EmptyStateScreen() {
 @Composable
 fun MusicListContent(
     musicViewModel: MusicViewModel,
-    currentSong: String,
     musicControllerUiState: MediaControllerUiState,
     onEvent: (HomeEvent) -> Unit,
     mainViewModel: HomeViewModel
@@ -150,12 +136,23 @@ fun MusicListContent(
             .fillMaxSize()
 
     ) {
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(2.dp),
             verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
+            item(0){
+                Card(modifier = Modifier.align(Alignment.TopCenter), shape = RoundedCornerShape(bottomEndPercent = 20, bottomStartPercent = 20)
+                    , elevation = CardDefaults.elevatedCardElevation(10.dp)){
+                BottomPlaybackController(
+                    onEvent = mainViewModel::onEvent,
+                    song = musicControllerUiState.currentSong,
+                    playerState = musicControllerUiState.playerState,
+                    )
+                }
+            }
             itemsIndexed(
                 items = musicList.map { Song(it.name, it.toUri().toString()) }, //musicList,
                 key = { _, music -> music.songUrl }
@@ -166,17 +163,14 @@ fun MusicListContent(
                     onClick = {
                         onEvent(HomeEvent.OnSongSelected(music))
                         onEvent(HomeEvent.PlaySong)
+
                     },
                     mainViewModel = mainViewModel
                 )
             }
         }
 
-        BottomPlaybackController(
-                    onEvent = mainViewModel::onEvent,
-                song = musicControllerUiState.currentSong,
-                playerState = musicControllerUiState.playerState,
-                modifier = Modifier.align(Alignment.BottomCenter))
+
 
     }
 }
@@ -188,6 +182,7 @@ fun MusicItem(
     onClick: () -> Unit,
     mainViewModel: HomeViewModel
 ) {
+
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = {
@@ -215,22 +210,31 @@ fun MusicItem(
             shape = RoundedCornerShape(20),
             elevation = CardDefaults.elevatedCardElevation(10.dp)
         ) {
-            Row(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Image(
                     painter = painterResource(R.drawable.v790_nunny_37),
                     contentDescription = null,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = fileUri.toFile().name,
-                    fontSize = 20.sp,
                     modifier = Modifier
-                        .padding(10.dp)
-                        .weight(3f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                        .size(64.dp) // Set fixed image size
+                        .clip(RoundedCornerShape(8.dp))
                 )
+
+                Spacer(modifier = Modifier.width(12.dp)) // spacing between image and text
+    Text(
+                        text = fileUri.toFile().name,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
             }
+
         }
     }
 }
@@ -246,14 +250,14 @@ fun BottomPlaybackController(
        Row(
             modifier = modifier
                 .fillMaxWidth()
-                .background(Color.Gray)
+                .background(MaterialTheme.colorScheme.onBackground)
                 .padding(8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Display the current song title
             Text(
-                text = "Now Playing: ${song?.title}",
+                text = song?.title ?: "Select a music to play!",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
@@ -294,7 +298,3 @@ fun BottomPlaybackController(
 
 
 
-@Composable
-fun MusicPlayerScreen() {
-    // Placeholder for the Music Player Screen implementation
-}

@@ -1,111 +1,144 @@
 package com.krishnajeena.persona.ui_layer
 
-import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.krishnajeena.persona.R
+import com.krishnajeena.persona.data_layer.BlogItem
+import com.krishnajeena.persona.model.BlogUrlViewModel
+import com.krishnajeena.persona.model.CameraClickViewModel
+import com.krishnajeena.persona.model.CameraPhotoViewModel
+import com.krishnajeena.persona.model.CategoryBlogViewModel
 import com.krishnajeena.persona.model.SharedViewModel
-import com.krishnajeena.persona.screens.BlogsScreen
-import com.krishnajeena.persona.screens.BooksScreen
+import com.krishnajeena.persona.other.BottomNavItem
+
 import com.krishnajeena.persona.screens.DailyCameraScreen
+import com.krishnajeena.persona.screens.DismissBackground
+import com.krishnajeena.persona.screens.ExploreScreen
 import com.krishnajeena.persona.screens.MusicScreen
-import com.krishnajeena.persona.screens.NotesScreen
 import com.krishnajeena.persona.screens.ReelScreen
+import com.krishnajeena.persona.screens.StudyScreen
 import com.krishnajeena.persona.screens.ToolsScreen
-import com.krishnajeena.persona.screens.VoiceMemosScreen
+import com.krishnajeena.persona.screens.WebViewItem
 import com.krishnajeena.persona.ui.theme.PersonaTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import soup.compose.photo.ExperimentalPhotoApi
+import soup.compose.photo.PhotoBox
 import java.io.File
+import java.util.Date
 
-@OptIn(ExperimentalMaterial3Api::class)
+
+@RequiresApi(Build.VERSION_CODES.R)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPhotoApi::class)
 @Composable
-fun PersonaApp(sharedViewModel: SharedViewModel) {
-    PersonaTheme {
+fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel()) {
+
+    var isDark by rememberSaveable { mutableStateOf(false) }
+
+    PersonaTheme(darkTheme = isDark) {
         val navController = rememberNavController()
         var title by remember { mutableStateOf("Persona") }
         val context = LocalContext.current
-        val personaList = remember {
-            listOf(
-                "Clicks" to R.drawable._8037,
-                "Music" to R.drawable.v790_nunny_37,
-                "Notes" to R.drawable._282,
-                "Books" to R.drawable._920933,
-                "Blogs" to R.drawable._1242056,
-                "Voice" to R.drawable._209989
-                , "Tools" to R.drawable._2953444_isometric_7
-            )
-        }
 
-        HandlePermissions(context)
+        val cameraClickViewModel: CameraClickViewModel = hiltViewModel<CameraClickViewModel>()
 
         BackHandler(enabled = true) {
             if (navController.currentDestination?.route != "mainScreen") {
@@ -118,56 +151,6 @@ fun PersonaApp(sharedViewModel: SharedViewModel) {
         val pullOffset = remember { androidx.compose.animation.core.Animatable(0f) }
         val scope = rememberCoroutineScope()
 
-        val nestedScrollConnection = remember {
-            object : NestedScrollConnection {
-                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                    return Offset.Zero
-                }
-
-                override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                    // Update pullOffset smoothly while dragging down
-                    scope.launch {
-                        val newOffset = (pullOffset.value + available.y * 0.5f).coerceAtLeast(0f)
-                        pullOffset.snapTo(newOffset)
-                    }
-                    return Offset.Zero
-                }
-
-                override suspend fun onPreFling(available: androidx.compose.ui.unit.Velocity): androidx.compose.ui.unit.Velocity {
-                    if (pullOffset.value > 100f) {  // Threshold reached → Navigate to "tools"
-                        navController.navigate("reelStack")
-                    }
-
-                    // Always reset pullOffset after release
-                    scope.launch {
-                        pullOffset.animateTo(0f, animationSpec = spring(stiffness = Spring.StiffnessLow))
-                    }
-
-                    return super.onPreFling(available)
-                }
-            }
-        }
-
-        // Gesture-based pull handling
-        val pullGestureModifier = Modifier.pointerInput(Unit) {
-            detectDragGestures(
-                onDrag = { change, dragAmount ->
-                    change.consume() // Consume touch event
-                    scope.launch {
-                        val newOffset = (pullOffset.value + dragAmount.y * 0.5f).coerceAtLeast(0f)
-                        pullOffset.animateTo(newOffset) // Update animation instantly
-                    }
-                },
-                onDragEnd = {
-                    scope.launch {
-                        if (pullOffset.value < 100f) { // Reset if not enough pull
-                            pullOffset.animateTo(0f, animationSpec = spring(stiffness = Spring.StiffnessLow))
-                        }
-                    }
-                }
-            )
-        }
-
         // Reset animation when navigation happens
         LaunchedEffect(navController.currentBackStackEntry) {
             scope.launch {
@@ -177,102 +160,226 @@ fun PersonaApp(sharedViewModel: SharedViewModel) {
 
 // Apply this modifier to the Box or Column containing the pull effect
 
-
+        var showPopup by remember { mutableStateOf(false) }
 
         Scaffold(
+
             topBar = {
                 TopAppBar(
                     title = { Text(title) },
-                    navigationIcon = {
-                        val backStackEntry by navController.currentBackStackEntryAsState()
-
-                        if (backStackEntry?.destination?.route != "mainScreen") {
-                            IconButton(onClick = {
-                                val canGoBack = navController.popBackStack()
-                                if (!canGoBack) {
-                                    (context as? Activity)?.finish() // Close the app if no more screens in the stack
-                                }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                    contentDescription = "Back"
-                                )
-                            }
+                    actions = {
+                        IconButton(onClick = { isDark = !isDark }) {
+                            Icon(
+                                imageVector = if (isDark) Icons.Default.WbSunny else Icons.Default.DarkMode,
+                                contentDescription = "Toggle Theme"
+                            )
+                        }
+                        IconButton(onClick = { showPopup = true }) {
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Profile"
+                            )
                         }
 
+                        // Popup
+                        DropdownMenu(
+                            expanded = showPopup,
+                            onDismissRequest = { showPopup = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("🚧 Under Construction") },
+                                onClick = { showPopup = false }
+                            )
+                        }
                     }
                 )
-            }
+            },
+            bottomBar = { BottomBar(navController, cameraClickViewModel) },
         ) { innerPadding ->
 
             val activity = context as? Activity
             val sharedText = activity?.intent?.getStringExtra(Intent.EXTRA_TEXT)
 
 
-            NavHost(navController, startDestination = if(sharedText.isNullOrEmpty()) "mainScreen" else "tools" , Modifier.padding(innerPadding)
-                ) {
-                composable("clicks",
-                    deepLinks = listOf(navDeepLink { uriPattern = "app://com.krishnajeena.persona/clicks" })
-                ) {
-                    title = "Clicks"
-                    DailyCameraScreen()
+            val clicksUri by viewModel.images.collectAsState()
+//
+    // Fetch images when the composable is first displayed
+    LaunchedEffect(Unit) {
+        viewModel.fetchImages(context)
+    }
+
+            val categoryBlogViewModel: CategoryBlogViewModel = viewModel()
+
+            NavHost(navController, startDestination = if(sharedText!=null)
+                BottomNavItem.Tools.route else BottomNavItem.Explore.route, modifier = Modifier
+                .padding(top=innerPadding.calculateTopPadding(),
+                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                    end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)).fillMaxSize()
+            ) {
+
+                composable(BottomNavItem.Explore.route) { ExploreScreen(onCategoryClick = {
+                        blogList, name ->
+                    categoryBlogViewModel.setBlogs(blogList)
+                    categoryBlogViewModel.setName(name)
+                    navController.navigate(BottomNavItem.BlogsOfCategory.route)
+
                 }
-                composable("music") {
-                    title = "Music"
+                    , navController = navController) }
+
+                composable(BottomNavItem.ReelStack.route) { ReelScreen() }
+                composable(BottomNavItem.Clicks.route,
+                    deepLinks = listOf(navDeepLink { uriPattern = "app://com.krishnajeena.persona/clicks" })) { DailyCameraScreen(navController, cameraClickViewModel) }
+                composable(BottomNavItem.Study.route) { StudyScreen() }
+                composable(BottomNavItem.Tools.route) { ToolsScreen() }
+                composable(BottomNavItem.Music.route){
+                    val sharedViewModel: SharedViewModel = hiltViewModel()
                     MusicScreen(sharedViewModel = sharedViewModel)
                 }
+                composable(
+                    route = BottomNavItem.BlogsOfCategory.route
+                ) {
+                    CategoryClickedScreen(categoryBlogViewModel.selectedBlogs.value, categoryBlogViewModel.blogCategoryName.value, navController)
+                }
 
-                composable("mainScreen"){
-                    title = "Persona"
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .nestedScroll(nestedScrollConnection)
-                            .then(pullGestureModifier)
+                composable(
+                    route = "webview/{url}",
+                    arguments = listOf(navArgument("url") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val encodedUrl = backStackEntry.arguments?.getString("url") ?: ""
+                    val url = Uri.decode(encodedUrl) // Decode in case it's encoded
+                    WebViewItem(url)
+                }
 
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize()
-                            ,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-
-                        ) {
-                            // Stretchy Pull effect at the top
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(pullOffset.value.dp),
-                                contentAlignment = Alignment.Center
+                composable("personaImagesList") {
+                    viewModel.fetchImages(context)
+                    if(clicksUri.isEmpty()){
+                        AsyncImage(model = R.drawable.undraw_empty_4zx0, contentDescription = null,
+                            modifier = Modifier.fillMaxSize())
+                    }else {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            LazyVerticalGrid(
+                                modifier = Modifier.padding(2.dp),
+                                columns = GridCells.Fixed(2),
+                                contentPadding = PaddingValues(10.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
-                                // Animated Arrow
-                                val rotationAngle by animateFloatAsState(
-                                    targetValue = if (pullOffset.value > 100f) 180f else 0f,
-                                    animationSpec = tween(durationMillis = 200)
-                                )
+                                items(
+                                    items = clicksUri,
+                                    key = { it.toString() } // Use a unique and stable key for each item
+                                ) { img ->
+                                    val dismissState = rememberSwipeToDismissBoxState(
+                                        confirmValueChange = {
+                                            when (it) {
+                                                SwipeToDismissBoxValue.StartToEnd -> {
+                                                    viewModel.removeImage(context, img)
+                                                }
 
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowDownward,
-                                        contentDescription = "Pull to Open",
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .rotate(rotationAngle),
-                                        tint = Color.Gray
+                                                else -> Unit
+                                            }
+                                            true
+                                        },
+                                        positionalThreshold = { it * 0.25f }
                                     )
-                                    Text("Pull ReelStack", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+
+                                    SwipeToDismissBox(
+                                        state = dismissState,
+                                        modifier = Modifier,
+                                        enableDismissFromStartToEnd = true,
+                                        enableDismissFromEndToStart = false,
+                                        backgroundContent = { DismissBackground(dismissState) },
+                                    ) {
+                                        Card(
+                                            modifier = Modifier.padding(2.dp),
+                                            onClick = {
+                                                navController.navigate(
+                                                    "openPersonaImage/${Uri.encode(img.toString())}"
+                                                )
+                                            },
+                                            elevation = CardDefaults.elevatedCardElevation(10.dp),
+                                            shape = RoundedCornerShape(10.dp)
+                                        ) {
+                                            AsyncImage(
+                                                model = img,
+                                                contentDescription = null,
+                                                contentScale = ContentScale.FillWidth,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        }
+                                    }
                                 }
                             }
 
-                            // Persona content with LazyVerticalGrid
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(2),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalArrangement = Arrangement.SpaceEvenly,
-                                contentPadding = PaddingValues(2.dp),
-                                modifier = Modifier.padding(3.dp)
+                        }
+                    }
+        }
+
+                composable(
+                    "openPersonaImage/{imageUri}",
+                    arguments = listOf(navArgument("imageUri") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val context = LocalContext.current
+                    val imageUriString = backStackEntry.arguments?.getString("imageUri")
+                    val imageUri = imageUriString?.let { Uri.parse(it) }
+
+                    rememberCoroutineScope()
+                    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+                    var showSheet by remember { mutableStateOf(false) }
+
+                    if (imageUri != null) {
+                        if (showSheet) {
+                            ModalBottomSheet(
+                                onDismissRequest = { showSheet = false },
+                                sheetState = bottomSheetState
                             ) {
-                                items(personaList) { item ->
-                                    PersonaItem(item, navController)
+                                // Fetch file info
+                                val file = File(imageUri.path ?: "")
+                                val name = file.name
+                                val size = file.length() / 1024 // size in KB
+                                val location = file.absolutePath
+                                val lastModified = Date(file.lastModified()).toString()
+
+                                Column(Modifier.padding(16.dp)) {
+                                    Text("File Name: $name")
+                                    Text("Size: ${size}KB")
+                                    Text("Location: $location")
+                                    Text("Last Updated: $lastModified")
+                                }
+                            }
+                        }
+
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            PhotoBox {
+                            AsyncImage(
+                                model = imageUri,
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(bottom = 100.dp)
+                            )
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(16.dp)
+                            ) {
+                                IconButton(onClick = {
+                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "image/*"
+                                        putExtra(Intent.EXTRA_STREAM, imageUri)
+                                        putExtra(Intent.EXTRA_TEXT, "Shared from Persona 📱\nCheck this out!")
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(intent, "Share image via"))
+                                }) {
+                                    Icon(Icons.Default.Share, contentDescription = "Share")
+                                }
+
+                                IconButton(onClick = { showSheet = true }) {
+                                    Icon(Icons.Default.Info, contentDescription = "Details")
                                 }
                             }
                         }
@@ -280,149 +387,250 @@ fun PersonaApp(sharedViewModel: SharedViewModel) {
                 }
 
 
-                composable("notes") {
-                    title = "Notes"
-                    NotesScreen()
-                }
-                composable("books") {
-                    title = "Books"
-                    BooksScreen()
-                }
-                composable("blogs") {
-                    title = "Blogs"
-                    BlogsScreen()
-                }
-                composable("voice"){
-                    title = "Voice"
-                    VoiceMemosScreen()
-                }
-
-                composable("reelStack"){
-                    title="ReelStack" //tools to be made later when there are tools
-                    ReelScreen()
-
-                }
-
-                composable("tools"){
-                    title="Tool(Video Downloader)"
-                    ToolsScreen()
-                }
             }
+
         }
     }
 }
 
-
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun PersonaItem(name: Pair<String, Int>, navController: NavController) {
-    val context = LocalContext.current
+fun CategoryClickedScreen(
+    value: List<BlogItem>,
+    blogCatName: String,
+    navController: NavController
+) {
 
-    val folder = File(context.getExternalFilesDir(null), "PersonaClicks")
-    if (!folder.exists()) folder.mkdirs()
+Column(modifier = Modifier.fillMaxSize().padding(16.dp)){
+    Text(
+        text = blogCatName,
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(4.dp)
+    ) {
+        items(value) { blog ->
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp).clickable{
+                        navController.navigate("webview/${Uri.encode(blog.url)}")
+                    }
+            ) {
+                Row(modifier = Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically){
+                Column(
+                    modifier = Modifier
+                        .padding(6.dp).
+                    fillMaxWidth(.75f)
+                ) {
+                    Text(
+                        text = blog.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = blog.url,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+                    val context = LocalContext.current
 
-// Create a file and corresponding Uri
-    val imageFile = File(folder, "IMG_${System.currentTimeMillis()}.jpg")
-    val imageUri = FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.provider",
-        imageFile
+                    val blogUrlViewModel = hiltViewModel<BlogUrlViewModel>()
+                    IconButton(modifier = Modifier.padding(2.dp).size(20.dp),
+                        onClick = {
+                        blogUrlViewModel.addUrl(blog.title, blog.url)
+                        if(blogUrlViewModel.isAlreadyAdded(blog.url)){
+                            Toast.makeText(context, "Added to My Blogs", Toast.LENGTH_SHORT).show()
+                        }
+                    }, enabled = !blogUrlViewModel.isAlreadyAdded(blog.url),
+                        ){
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add Blog",
+                            modifier = Modifier.size(20.dp),
+                            tint = if(blogUrlViewModel.isAlreadyAdded(blog.url)) Color.Gray else Color.Black)
+                    }
+            }
+            }
+        }
+    }
+
+}
+}
+
+
+
+@SuppressLint("SuspiciousIndentation")
+@Composable
+fun BottomBar(navController: NavController, cameraClickViewModel: CameraClickViewModel) {
+    val items = listOf(
+        BottomNavItem.Explore,
+        BottomNavItem.ReelStack,
+        BottomNavItem.Clicks,
+        BottomNavItem.Study,
+        BottomNavItem.Tools
     )
 
-// Updated camera launcher
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            // Handle the full-resolution image stored at `imageUri`
-            CoroutineScope(Dispatchers.IO).launch {
-                saveImageToPersonaUri(context, imageUri) // Optional custom save logic
-            }
-        } else {
-            Toast.makeText(context, "Image capture failed", Toast.LENGTH_SHORT).show()
-        }
+    val currentBackStack by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStack?.destination?.route
+
+    var isBottomBarVisible by remember { mutableStateOf(true) }
+
+    val context = LocalContext.current
+    val isGesture = remember{
+        isGestureNavigationEnabled(context)
     }
+    File(
+        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+        "Persona/Clicks"
+    ).apply { if (!exists()) mkdirs() }
 
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+
+
+    Box(
         modifier = Modifier
-            .fillMaxSize(0.8f)
-            .height(200.dp)
-            .padding(5.dp)
+            .fillMaxWidth()
+            .wrapContentHeight()
+            ,
+        contentAlignment = Alignment.BottomCenter
     ) {
-        Card(
+
+    // BottomAppBar
+        AnimatedVisibility(
+            visible = isBottomBarVisible,
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it }),
             modifier = Modifier
-                .fillMaxSize(0.8f)
-                .combinedClickable(
-                    onClick = {
-                        if (name.first == "Clicks") {
-                            cameraLauncher.launch(imageUri)
-                        } else {
-                            navController.navigate(name.first.lowercase())
-                        }
-                    },
-                    onLongClick = {
-                        if (name.first == "Clicks") {
-                            navController.navigate(name.first.lowercase())
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+        ) {
+            BottomAppBar(
+                tonalElevation = 0.dp,
+                modifier = Modifier,
+                contentPadding = PaddingValues(horizontal = 6.dp)
+            ) {
+                items.forEachIndexed { index, item ->
+                    if (index == 2) {
+                        Spacer(Modifier.weight(1f))
+                    } else {
+                        NavigationBarItem(
+                            icon = { Icon(item.icon, contentDescription = item.label) },
+                            label = { Text(item.label) },
+                            selected = currentRoute == item.route,
+                            onClick = { navController.navigate(item.route) },
+                            alwaysShowLabel = true
+                        )
+                    }
+                }
+            }
+        }
+
+        // Center FAB (Camera)
+        AnimatedVisibility(
+            visible = isBottomBarVisible,
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it }),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+
+        ) {
+            FloatingActionButton(
+                onClick = {
+                    if (currentRoute == BottomNavItem.Clicks.route) {
+                        cameraClickViewModel.triggerCapture()
+                    } else {
+                        navController.navigate(BottomNavItem.Clicks.route) {
+                            launchSingleTop = true
                         }
                     }
+                },
+                containerColor = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = if(isGesture) (-42).dp else (-72).dp)
+                    .size(64.dp),
+                shape = CircleShape,
+                elevation = FloatingActionButtonDefaults.elevation(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    contentDescription = "Clicks",
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.White
                 )
-        ) {
-
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(name.second)  // The image URL or resource
-                    .crossfade(true)  // Enable smooth transition effect when loading
-                    .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.Center
-            )
+            }
         }
-        Text(text = name.first, fontSize = 20.sp)
+
+        val animatedBottomPadding1 by animateDpAsState(
+            targetValue = if (isBottomBarVisible) {if(isGesture) 110.dp else 140.dp} else {if(isGesture) 30.dp else 50.dp},
+            label = "fab_bottom_padding"
+        )
+
+            // Bottom Left FAB (Music)
+            FloatingActionButton(
+                onClick = { navController.navigate(BottomNavItem.Music.route) },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 20.dp, bottom = animatedBottomPadding1)
+                    .size(48.dp),
+                shape = CircleShape,
+
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.vinyl_disc),
+                    contentDescription = "Music",
+                    modifier = Modifier.size(24.dp),
+                    tint = Color.White
+                )
+            }
+
+
+        val animatedBottomPadding2 by animateDpAsState(
+            targetValue = if (isBottomBarVisible) {if(isGesture) 80.dp else 110.dp} else {if(isGesture) 30.dp else 50.dp},
+            label = "fab_bottom_padding"
+        )
+
+            // Bottom Right FAB (Toggle Bottom Bar)
+            FloatingActionButton(
+                onClick = { isBottomBarVisible = !isBottomBarVisible },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 20.dp, bottom = animatedBottomPadding2)
+                    .size(34.dp),
+                shape = CircleShape,
+
+            ) {
+                Icon(
+                    imageVector = if (isBottomBarVisible)
+                        Icons.Default.KeyboardArrowDown
+                    else
+                        Icons.Default.KeyboardArrowUp,
+                    contentDescription = "Toggle Bottom Bar",
+                    tint = Color.White
+                )
+            }
+
+
     }
 }
 
-@Composable
-fun HandlePermissions(context: Context) {
-    val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-    val arePermissionsGranted = permissions.all { permission ->
-        ContextCompat.checkSelfPermission(context, permission) ==
-                PackageManager.PERMISSION_GRANTED
-    }
-    val requestPermissionsLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissionsMap ->
-        val allGranted = permissionsMap.all { it.value }
-        Toast.makeText(
-            context,
-            if (allGranted) "All Permissions Granted" else "Permissions Denied",
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-    LaunchedEffect(Unit) {
-        if (!arePermissionsGranted) {
-            requestPermissionsLauncher.launch(permissions)
-        }
-    }
-}
-fun saveImageToPersonaUri(context: Context, imageUri: Uri) {
-    val contentResolver = context.contentResolver
+fun isGestureNavigationEnabled(context: Context): Boolean{
 
-    try {
-        val inputStream = contentResolver.openInputStream(imageUri)
-        inputStream?.use {
-            // Optionally read or validate the image content
-        }
-
-        CoroutineScope(Dispatchers.Main).launch {
-            Toast.makeText(context, "Image saved to PersonaClicks!", Toast.LENGTH_SHORT).show()
-        }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        CoroutineScope(Dispatchers.Main).launch {
-            Toast.makeText(context, "Failed to save the image!", Toast.LENGTH_SHORT).show()
-        }
+    return try{
+        val mode = Settings.Secure.getInt(
+            context.contentResolver,
+            "navigation_mode"
+        )
+        mode == 2
+    } catch(e : Settings.SettingNotFoundException){
+        false
     }
+
 }

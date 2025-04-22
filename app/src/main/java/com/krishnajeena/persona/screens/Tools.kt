@@ -42,7 +42,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -60,6 +63,11 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ToolsScreen(modifier: Modifier = Modifier) {
         Column(modifier = modifier.fillMaxSize()) {
+                Text("Video Downloader",
+                        fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.padding(6.dp)
+                )
                 VideoDownloaderScreen()
         }
 }

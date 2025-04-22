@@ -1,10 +1,12 @@
 package com.krishnajeena.persona.screens
 
+import android.Manifest
+import android.app.Activity
 import android.app.DownloadManager
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
@@ -18,28 +20,21 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
@@ -51,8 +46,6 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -72,14 +65,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -91,49 +83,26 @@ import androidx.navigation.navArgument
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.data_layer.BlogUrl
 import com.krishnajeena.persona.model.BlogUrlViewModel
-import com.krishnajeena.persona.section.blogs.BlogViewModel
 import kotlinx.coroutines.launch
-import androidx.lifecycle.viewmodel.compose.viewModel
 
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.pager.PagerDefaults
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.res.colorResource
+import androidx.core.content.ContextCompat
 import com.krishnajeena.persona.other.DownloadCompleteReceiver
-import kotlinx.coroutines.launch
 import java.io.File
 import java.net.URLConnection
 
 
 @RequiresApi(Build.VERSION_CODES.R)
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
-fun BlogsScreen() {
+fun StudyScreen() {
     var showBottomSheet by remember { mutableStateOf(false) }
     var isWebOpen by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val navController = rememberNavController()
 
-    val tabs = listOf("My Blogs", "Explore")
-    var selectedTab by remember { mutableStateOf(0) }
-
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        floatingActionButton = {
-            if (!isWebOpen && selectedTab == 0) {
-                FloatingActionButton(
-                    onClick = { showBottomSheet = true },
-                    elevation = FloatingActionButtonDefaults.elevation(0.dp),
-                    modifier = Modifier.padding(bottom = 16.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                }
-            }
-        },
-        floatingActionButtonPosition = FabPosition.Center
     ) { _ ->
 
         NavHost(
@@ -143,7 +112,7 @@ fun BlogsScreen() {
         ) {
             composable("blogs") {
                 isWebOpen = false
-                val tabTitles = listOf("My Blogs", "Explore")
+                val tabTitles = listOf("My Blogs", "My Notes", "Books")
                 val pagerState = rememberPagerState(initialPage = 0,
                     pageCount = { tabTitles.size })
                 val coroutineScope = rememberCoroutineScope()
@@ -169,17 +138,13 @@ fun BlogsScreen() {
                     ) { page ->
                         when (page) {
                             0 -> MyBlogsSection(
-                                showBottomSheet = showBottomSheet,
                                 setShowBottomSheet = { showBottomSheet = it },
                                 isWebOpen = isWebOpen,
-                                setIsWebOpen = { isWebOpen = it },
                                 navController = navController,
                                 context = context
                             )
-                            1 -> ExploreBlogsSection(
-                                navController = navController,
-                                setIsWebOpen = { isWebOpen = it }
-                            )
+                            1 -> NotesScreen()
+                            2-> BooksScreen()
                         }
                     }
                 }
@@ -195,6 +160,7 @@ fun BlogsScreen() {
                 WebViewItem(url = backStackEntry.arguments?.getString("url") ?: "https://www.google.com/")
                 isWebOpen = true
             }
+
         }
     }
 }
@@ -202,13 +168,25 @@ fun BlogsScreen() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyBlogsSection(
-    showBottomSheet: Boolean,
     setShowBottomSheet: (Boolean) -> Unit,
     isWebOpen: Boolean,
-    setIsWebOpen: (Boolean) -> Unit,
     navController: NavHostController,
     context: Context
 ) {
+    var showBottomSheet by remember { mutableStateOf(false) }
+    Scaffold(  floatingActionButton = {
+        if (!isWebOpen) {
+            FloatingActionButton(
+                onClick = { showBottomSheet = true },
+                elevation = FloatingActionButtonDefaults.elevation(0.dp),
+                modifier = Modifier.padding(bottom = 80.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = null)
+            }
+        }
+    },
+        floatingActionButtonPosition = FabPosition.Center) { innerPadding ->
+
     val blogUrlViewModel = hiltViewModel<BlogUrlViewModel>()
 
     if (showBottomSheet) {
@@ -282,90 +260,6 @@ fun MyBlogsSection(
             }
         }
     }
-}
-
-
-@Composable
-fun ExploreBlogsSection(
-    navController: NavController,
-    setIsWebOpen: (Boolean) -> Unit,
-    viewModel: BlogViewModel = viewModel(),
-    blogUrlViewModel: BlogUrlViewModel = hiltViewModel(),
-    context: Context = LocalContext.current
-) {
-    if (viewModel.isLoading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        viewModel.blogCategories.forEach { category ->
-            item {
-                Text(
-                    text = category.name,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-
-            items(category.blogs) { blog ->
-                val isAlreadySaved = blogUrlViewModel.isAlreadyAdded(blog.url)
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    elevation = CardDefaults.elevatedCardElevation(6.dp),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .clickable {
-                                setIsWebOpen(true)
-                                navController.navigate("webView/${Uri.encode(blog.url)}")
-                            }
-                            .padding(12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = blog.title,
-                                fontSize = 16.sp,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            IconButton(
-                                onClick = {
-                                    if (!isAlreadySaved) {
-                                        blogUrlViewModel.addUrl(blog.title, blog.url)
-                                        Toast.makeText(context, "Blog added!", Toast.LENGTH_SHORT).show()
-                                    } else{
-                                        Toast.makeText(context, "Blog already added!", Toast.LENGTH_SHORT).show()
-
-                                    }
-                                },
-
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Add",
-                                    tint = if (isAlreadySaved) Color.LightGray else MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Text(text = blog.url, fontSize = 12.sp)
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -392,7 +286,7 @@ fun formatUrl(url: String): String? {
         null // Empty URL
     }
 }
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun BlogsItem(
     blogUrlViewModel: BlogUrlViewModel,
@@ -438,6 +332,7 @@ SwipeToDismissBox(
     }
 }
 }
+
 @RequiresApi(Build.VERSION_CODES.R)
 @Composable
 fun WebViewItem(url: String) {
@@ -446,17 +341,6 @@ fun WebViewItem(url: String) {
     val context = LocalContext.current
 
     val webView = remember { WebView(context) }
-
-    // Check if the app has the necessary permissions
-    val hasStoragePermission = Environment.isExternalStorageManager() // For Android 11 and above
-
-    // Request permission if needed
-    if (!hasStoragePermission) {
-        val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-            data = Uri.parse("package:" + context.packageName)
-        }
-        context.startActivity(intent)
-    }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AndroidView(
@@ -495,22 +379,28 @@ fun WebViewItem(url: String) {
                     setDownloadListener { downloadUrl, _, contentDisposition, mimeType, _ ->
                         val fileName = URLUtil.guessFileName(downloadUrl, contentDisposition, mimeType)
 
-                        // Check if permissions are granted before downloading
-                        if (hasStoragePermission) {
-                            val downloadDir = File(
-                                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                                "Persona/MyBooks"
-                            )
-                            if (!downloadDir.exists()) {
-                                val success = downloadDir.mkdirs()
-                                if (success) {
+                        // Ensure only necessary permission is requested (Scoped storage or WRITE_EXTERNAL_STORAGE)
+                        if (ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                            ) == PackageManager.PERMISSION_GRANTED) {
+
+                            // Define your app-specific download folder
+                            val downloadDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)?.let {
+                                File(it, "Persona/MyBooks")
+                            }
+
+                            // Make sure the directory exists
+                            if (downloadDir?.exists() != true) {
+                                val success = downloadDir?.mkdirs()
+                                if (success == true) {
                                     Log.d("Download", "Folder created successfully.")
                                 } else {
                                     Log.e("Download", "Failed to create folder.")
                                 }
                             }
 
-                            // ✅ Guess the file name using URLUtil and fallback MIME type if null or unknown
+                            // Guess mime type and file name
                             val resolvedMimeType = mimeType ?: URLConnection.guessContentTypeFromName(downloadUrl) ?: "application/pdf"
                             val guessedFileName = URLUtil.guessFileName(downloadUrl, contentDisposition, resolvedMimeType)
 
@@ -519,11 +409,14 @@ fun WebViewItem(url: String) {
                                 setDescription("Downloading book...")
                                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
 
-                                // ✅ Save to Downloads/Persona/MyBooks with correct name
-                                setDestinationInExternalPublicDir(
-                                    Environment.DIRECTORY_DOWNLOADS,
-                                    "Persona/MyBooks/$guessedFileName"
-                                )
+                                // Save to app-specific folder using Scoped Storage
+                                downloadDir?.let { dir ->
+                                    setDestinationInExternalFilesDir(
+                                        context,
+                                        Environment.DIRECTORY_DOWNLOADS,
+                                        "Persona/MyBooks/$guessedFileName"
+                                    )
+                                }
 
                                 setMimeType(resolvedMimeType)
                                 setAllowedOverMetered(true)
@@ -537,17 +430,22 @@ fun WebViewItem(url: String) {
                             DownloadCompleteReceiver.expectedFileName = guessedFileName
                             DownloadCompleteReceiver.expectedMimeType = resolvedMimeType
 
-                            context.registerReceiver(
+                            ContextCompat.registerReceiver(
+                                context,
                                 DownloadCompleteReceiver,
                                 IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-
+                                ContextCompat.RECEIVER_NOT_EXPORTED
                             )
 
                             Toast.makeText(context, "Downloading $guessedFileName", Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, "Permission is required to download the file", Toast.LENGTH_SHORT).show()
+                            // Request permission to write to storage only when needed
+                            ActivityCompat.requestPermissions(
+                                context as Activity,
+                                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                                1001 // Your request code here
+                            )
                         }
-
                     }
 
                     loadUrl(url)
@@ -579,13 +477,4 @@ fun WebViewItem(url: String) {
             }
         }
     }
-}
-
-fun Context.findComponentActivity(): ComponentActivity? {
-    var context = this
-    while (context is ContextWrapper) {
-        if (context is ComponentActivity) return context
-        context = context.baseContext
-    }
-    return null
 }

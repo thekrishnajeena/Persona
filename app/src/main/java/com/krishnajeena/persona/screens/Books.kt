@@ -105,7 +105,7 @@ pdfPickerLauncher.launch(("application/pdf"))
 
                 },
                 elevation = FloatingActionButtonDefaults.elevation(0.dp),
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 86.dp)
             ) {
                 Icon(imageVector = Icons.Default.Add,
                     contentDescription = null)
@@ -122,33 +122,9 @@ Column(modifier = Modifier
         composable("listBook"){
 isWebOpen = false
 
-            val pagerState = rememberPagerState(initialPage = 0, pageCount = {2})
-            val tabs = listOf("My Books", "Explore")
-            val coroutineScope = rememberCoroutineScope()
 
             Column(modifier = Modifier.fillMaxSize()) {
-                TabRow(selectedTabIndex = pagerState.currentPage) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            text = { Text(title) },
-                            selected = pagerState.currentPage == index,
-                            onClick = {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(index)
-                                }
-                            }
-                        )
-                    }
-                }
 
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize().align(Alignment.CenterHorizontally)
-                ) { page ->
-                    when (page) {
-                        0 -> {
-                            // My Books section
-//                            val context = LocalContext.current
 
                             val myBooksDir = File(
                                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
@@ -182,34 +158,8 @@ isWebOpen = false
                                 }
                             }}
 
-
-                            1 -> {
-                            // Explore section
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(
-                                            text = "\uD83D\uDCDA Explore is cooking! You’ll be able to discover awesome books here soon.",
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                }
-
-//                            ExploreBooksSection(
-//                                navController = navController,
-//                                booksViewModel = booksViewModel,
-//                                setIsWebOpen = { isWebOpen = it }
-//                            )
-                        }
                     }
-                }
-            }
 
-        }
         composable("bookOpen/{bookName}",
             arguments = listOf(navArgument("bookName"){
                 type = NavType.StringType
@@ -242,59 +192,6 @@ isWebOpen = false
 
 }
 
-@Composable
-fun ExploreBooksSection(
-    navController: NavController,
-    booksViewModel: BooksViewModel, // if needed for future actions
-    setIsWebOpen: (Boolean) -> Unit
-) {
-    val websites = listOf(
-        "By Harsh" to "https://github.com/HarshVadaliya/tech-books-library/tree/master",
-        "WeLib" to "https://www.welib.org",
-        "By OhSussanmarie" to "https://github.com/ohsusannamarie/A-FREE-Bookshelf-for-Leveling-Up-Your-Work-and-Life"
-    )
-
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxSize()
-    ) {
-        items(websites) { (name, url) ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1.2f)
-                    .clickable {
-                        navController.navigate("webView/${Uri.encode(url)}")
-                    },
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFEEF2F5))
-                ) {
-                    Text(
-                        text = name,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        color = Color(0xFF333333),
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-//@Preview(showSystemUi = true, showBackground = true)
 @Composable
 fun BookItem(
     name: File,
@@ -356,7 +253,6 @@ navController.navigate("bookOpen/${Uri.encode(name.toUri().toString())}")
 fun DismissBackground(dismissState: SwipeToDismissBoxState) {
     val color = when (dismissState.dismissDirection) {
         SwipeToDismissBoxValue.StartToEnd -> Color(0xFFFFFFFF)
-    //    SwipeToDismissBoxValue.EndToStart -> Color(0xFF1DE9B6)
         else  -> Color.Transparent
     }
 Card(modifier = Modifier
@@ -367,7 +263,7 @@ Card(modifier = Modifier
         modifier = Modifier
             .fillMaxSize()
             .background(color)
-            .padding(12.dp, 8.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {

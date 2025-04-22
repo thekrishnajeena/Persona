@@ -1,6 +1,7 @@
 package com.krishnajeena.persona.ui_layer
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,6 +52,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -83,7 +86,10 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.krishnajeena.persona.model.NoteViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,7 +102,8 @@ fun NoteScreen(state: NoteState, onEvent: (NoteEvent) -> Unit) {
                 Icon(imageVector = Icons.Rounded.Add, contentDescription = null)
             }
         },
-        floatingActionButtonPosition = FabPosition.Center
+        floatingActionButtonPosition = FabPosition.Center,
+        modifier = Modifier.padding(bottom = 80.dp).background(Color.White)
     ) { innerPadding ->
         if (showBottomSheet) {
             val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -150,8 +157,7 @@ fun NoteScreen(state: NoteState, onEvent: (NoteEvent) -> Unit) {
                 )
             } else {
                 ZoomableCanvas(
-                    notes = state.notes,
-                    onEvent = onEvent,
+                  viewModel = hiltViewModel<NoteViewModel>(),
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color(0xFFFAFAFA))
@@ -160,79 +166,115 @@ fun NoteScreen(state: NoteState, onEvent: (NoteEvent) -> Unit) {
         }
     }
 }
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ZoomableCanvas(
-    notes: List<Note>,
-    onEvent: (NoteEvent) -> Unit,
+    viewModel: NoteViewModel,
     modifier: Modifier = Modifier
 ) {
+    val state by viewModel.state.collectAsState()
+    val notes = state.notes
+
     val scale = remember { mutableFloatStateOf(1f) }
     val offset = remember { mutableStateOf(Offset.Zero) }
     val selectedNote = remember { mutableStateOf<Note?>(null) }
+    val editingNote = remember { mutableStateOf<Note?>(null) }
 
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
 
-    // Calculate canvas size to fit all notes at 1f scale
-    val noteBounds = remember(notes) {
-        notes.fold(Rect(0f, 0f, screenWidthPx, screenHeightPx)) { rect, note ->
-            val noteRect = Rect(note.position.toOffset(), Size(120f, 100f))
-            Rect(
-                minOf(rect.left, noteRect.left),
-                minOf(rect.top, noteRect.top),
-                maxOf(rect.right, noteRect.right),
-                maxOf(rect.bottom, noteRect.bottom)
-            )
+    val sheetState = rememberModalBottomSheetState()
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+
+    // Bottom Sheet for Editing
+    if (editingNote.value != null) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                editingNote.value = null
+            },
+            sheetState = sheetState
+        ) {
+            Column(modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        editingNote.value?.let { note ->
+                            viewModel.onEvent(NoteEvent.EditNote(
+                                note = note,
+                                updatedTitle = title,
+                                updatedDescription = description
+                            ))
+                            Toast.makeText(context, "Note Updated", Toast.LENGTH_SHORT).show()
+                        }
+                        coroutineScope.launch {
+                            sheetState.hide()
+                        }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                editingNote.value = null
+                            }
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Submit")
+                }
+            }
         }
     }
 
-    val canvasWidth = screenWidthPx //maxOf(screenWidthPx, screenWidthPx * 2f)
-    val canvasHeight = screenHeightPx //maxOf(screenHeightPx, screenHeightPx * 2f)
-
-    val minScale = 1f
-    val maxScale = 2.5f
-
+    // Main Canvas
     Box(
-        modifier = modifier
-            .pointerInput(Unit) {
-                detectTransformGestures { centroid, pan, zoom, _ ->
-                    val newScale = (scale.floatValue * zoom).coerceIn(minScale, maxScale)
-                    scale.floatValue = newScale
+        modifier = modifier.pointerInput(Unit) {
+            detectTransformGestures { _, pan, zoom, _ ->
+                val newScale = (scale.floatValue * zoom).coerceIn(1f, 2.5f)
+                scale.floatValue = newScale
 
-                    if (newScale > 1f) {
-                        val adjustedPan = pan / scale.floatValue
-                        val newOffset = offset.value + adjustedPan
+                if (newScale > 1f) {
+                    val adjustedPan = pan / scale.floatValue
+                    val newOffset = offset.value + adjustedPan
 
-                        val scaledWidth = screenWidthPx * newScale
-                        val scaledHeight = screenHeightPx * newScale
+                    val scaledWidth = screenWidthPx * newScale
+                    val scaledHeight = screenHeightPx * newScale
 
-                        val maxX = (scaledWidth - screenWidthPx) / 2f
-                        val maxY = (scaledHeight - screenHeightPx) / 2f
+                    val maxX = (scaledWidth - screenWidthPx) / 2f
+                    val maxY = (scaledHeight - screenHeightPx) / 2f
 
-                        offset.value = Offset(
-                            x = newOffset.x.coerceIn(-maxX, maxX),
-                            y = newOffset.y.coerceIn(-maxY, maxY)
-                        )
-
-
-                    } else {
-                        offset.value = Offset.Zero
-                    }
-
-
+                    offset.value = Offset(
+                        x = newOffset.x.coerceIn(-maxX, maxX),
+                        y = newOffset.y.coerceIn(-maxY, maxY)
+                    )
+                } else {
+                    offset.value = Offset.Zero
                 }
             }
-            .clipToBounds()
-
+        }.clipToBounds()
     ) {
         Box(
             modifier = Modifier
                 .size(
-                    width = with(density) { canvasWidth.toDp() },
-                    height = with(density) { canvasHeight.toDp() }
+                    width = with(density) { screenWidthPx.toDp() },
+                    height = with(density) { screenHeightPx.toDp() }
                 )
                 .graphicsLayer(
                     scaleX = scale.floatValue,
@@ -240,41 +282,32 @@ fun ZoomableCanvas(
                     translationX = offset.value.x,
                     translationY = offset.value.y
                 )
-
         ) {
             notes.forEach { note ->
                 var position by remember { mutableStateOf(note.position.toOffset()) }
-
 
                 Box(
                     modifier = Modifier.scale(.8f)
                         .offset {
                             IntOffset(
-                                position.x
-                                    .coerceIn(0f, canvasWidth - 140f)
-                                    .toInt(),
-                                position.y
-                                    .coerceIn(0f, canvasHeight - 130f)
-                                    .toInt()
+                                position.x.coerceIn(-30f, screenWidthPx - 130f).toInt(),
+                                position.y.coerceIn(-30f, screenHeightPx - 420f).toInt()
                             )
                         }
-
                         .wrapContentSize()
                         .pointerInput(note.id) {
                             detectDragGestures { change, dragAmount ->
                                 change.consume()
                                 val newPos = position + (dragAmount / scale.floatValue)
                                 val clamped = Offset(
-                                    newPos.x.coerceIn(0f, canvasWidth-140f),
-                                    newPos.y.coerceIn(0f, canvasHeight-130f)
+                                    newPos.x.coerceIn(-30f, screenWidthPx - 130f),
+                                    newPos.y.coerceIn(-30f, screenHeightPx - 420f)
                                 )
-
                                 position = clamped
-                                onEvent(NoteEvent.UpdateNotePosition(note.id, clamped))
+                                viewModel.onEvent(NoteEvent.UpdateNotePosition(note.id, clamped))
                             }
                         }
                         .clickable { selectedNote.value = note }
-//
                 ) {
                     Card(
                         modifier = Modifier
@@ -285,11 +318,7 @@ fun ZoomableCanvas(
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Column(modifier = Modifier.padding(3.dp)) {
-                            Text(
-                                note.title,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 8.sp
-                            )
+                            Text(note.title, fontWeight = FontWeight.Bold, fontSize = 8.sp)
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 note.discription,
@@ -303,7 +332,11 @@ fun ZoomableCanvas(
                                 horizontalArrangement = Arrangement.End
                             ) {
                                 IconButton(
-                                    onClick = { /* edit logic */ },
+                                    onClick = {
+                                        title = note.title
+                                        description = note.discription
+                                        editingNote.value = note
+                                    },
                                     modifier = Modifier.size(16.dp)
                                 ) {
                                     Icon(
@@ -313,7 +346,9 @@ fun ZoomableCanvas(
                                     )
                                 }
                                 IconButton(
-                                    onClick = { onEvent(NoteEvent.DeleteNote(note)) },
+                                    onClick = {
+                                        viewModel.onEvent(NoteEvent.DeleteNote(note))
+                                    },
                                     modifier = Modifier.size(16.dp)
                                 ) {
                                     Icon(

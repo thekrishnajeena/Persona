@@ -53,11 +53,13 @@ class MusicViewModel @Inject constructor(
     private fun loadMusics() {
         viewModelScope.launch {
             val musicDir = File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "PersonaMusic")
-            _musicList.value = musicDir.listFiles()?.toList() ?: emptyList()
-        }
+            val files = musicDir.listFiles()?.toList() ?: emptyList()
+            _musicList.value = files
 
-        _musicList.value?.let { it -> updateMusic(it.map { Song(it.name, it.toUri().toString()) }) }
+            updateMusic(files.map { Song(it.name, it.toUri().toString()) })
+        }
     }
+
 
     // Add music to directory
     fun addMusic(uri: Uri) {
