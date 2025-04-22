@@ -15,8 +15,8 @@ android {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
         targetSdk = 34
-        versionCode = 16
-        versionName = "3.1.1"
+        versionCode = 17
+        versionName = "3.1.2"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
