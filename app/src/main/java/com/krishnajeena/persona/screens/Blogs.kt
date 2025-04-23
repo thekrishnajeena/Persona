@@ -20,6 +20,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -157,7 +158,8 @@ fun StudyScreen() {
                     nullable = true
                 })
             ) { backStackEntry ->
-                WebViewItem(url = backStackEntry.arguments?.getString("url") ?: "https://www.google.com/")
+                WebViewItem(url = backStackEntry.arguments?.getString("url") ?: "https://www.google.com/",
+                    navController)
                 isWebOpen = true
             }
 
@@ -335,9 +337,10 @@ SwipeToDismissBox(
 
 @RequiresApi(Build.VERSION_CODES.R)
 @Composable
-fun WebViewItem(url: String) {
+fun WebViewItem(url: String, navController: NavController) {
     var isLoading by remember { mutableStateOf(true) }
     var hasError by remember { mutableStateOf(false) }
+    val canGoBack = remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val webView = remember { WebView(context) }
@@ -377,7 +380,6 @@ fun WebViewItem(url: String) {
 
                     // Handle downloads to Downloads/Persona/MyBooks
                     setDownloadListener { downloadUrl, _, contentDisposition, mimeType, _ ->
-                        val fileName = URLUtil.guessFileName(downloadUrl, contentDisposition, mimeType)
 
                         // Ensure only necessary permission is requested (Scoped storage or WRITE_EXTERNAL_STORAGE)
                         if (ContextCompat.checkSelfPermission(
@@ -451,8 +453,20 @@ fun WebViewItem(url: String) {
                     loadUrl(url)
                 }
             },
+            update = {
+                canGoBack.value = it.canGoBack()
+            },
             modifier = Modifier.fillMaxSize()
         )
+
+        BackHandler {
+            if (webView.canGoBack()) {
+                webView.goBack()
+            } else {
+                navController.popBackStack()
+            }
+        }
+
 
         if (isLoading) {
             CircularProgressIndicator()

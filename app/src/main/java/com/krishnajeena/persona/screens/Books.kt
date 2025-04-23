@@ -181,7 +181,8 @@ isWebOpen = false
                 nullable = true
             })
         ) { backStackEntry ->
-            WebViewItem(url = backStackEntry.arguments?.getString("url") ?: "https://www.google.com/")
+            WebViewItem(url = backStackEntry.arguments?.getString("url") ?: "https://www.google.com/",
+                navController)
             isWebOpen = true
         }
     }

@@ -247,7 +247,7 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel()) {
                 ) { backStackEntry ->
                     val encodedUrl = backStackEntry.arguments?.getString("url") ?: ""
                     val url = Uri.decode(encodedUrl) // Decode in case it's encoded
-                    WebViewItem(url)
+                    WebViewItem(url, navController)
                 }
 
                 composable("personaImagesList") {
