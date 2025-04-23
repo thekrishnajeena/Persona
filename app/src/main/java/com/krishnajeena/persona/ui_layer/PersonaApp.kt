@@ -141,7 +141,7 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel()) {
         val cameraClickViewModel: CameraClickViewModel = hiltViewModel<CameraClickViewModel>()
 
         BackHandler(enabled = true) {
-            if (navController.currentDestination?.route != "mainScreen") {
+            if (navController.currentDestination?.route != BottomNavItem.Explore.route) {
                 navController.popBackStack()
             } else {
                 (context as? Activity)?.finish()

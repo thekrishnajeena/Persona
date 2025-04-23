@@ -3,6 +3,7 @@ package com.krishnajeena.persona.screens
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.webkit.WebView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -60,6 +61,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -287,4 +289,18 @@ fun PersonaPdfViewer(modifier: Modifier = Modifier, url: String="") {
     )
     }
 
+}
+
+@Composable
+fun BookReaderScreen(pdfFilePath: String) {
+    AndroidView(factory = { context ->
+        WebView(context).apply {
+            settings.javaScriptEnabled = true
+            settings.allowFileAccess = true
+            settings.domStorageEnabled = true
+
+            val viewerUrl = "file:///android_asset/pdfjs/web/viewer.html?file=$pdfFilePath"
+            loadUrl(viewerUrl)
+        }
+    }, modifier = Modifier.fillMaxSize())
 }
