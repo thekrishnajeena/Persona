@@ -70,7 +70,12 @@ fun ExploreScreen(
     navController: NavHostController
 ) {
     val viewModel: ExploreViewModel = hiltViewModel()
+    val firstCategory = viewModel.firstSelected
     val articlesViewModel: ArticlesViewModel = viewModel()
+
+    LaunchedEffect(firstCategory) {
+        articlesViewModel.fetchArticles(firstCategory)
+    }
 
     val categories = viewModel.categories
     val isConnected by viewModel.isConnected.collectAsState()

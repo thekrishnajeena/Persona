@@ -170,4 +170,5 @@ implementation("com.google.accompanist:accompanist-permissions:0.32.0")
     implementation("io.ktor:ktor-client-android:2.3.4")
     implementation ("com.google.accompanist:accompanist-placeholder-material:0.34.0")
 
+    implementation ("androidx.constraintlayout:constraintlayout-compose:1.1.1")
 }

@@ -17,15 +17,13 @@ import kotlinx.coroutines.launch
 
 class ArticlesViewModel : ViewModel() {
 
-    var selectedCategory by mutableStateOf("entrepreneurship")
+
     var articles by mutableStateOf(listOf<DevToArticle>())
     var isLoading by mutableStateOf(false)
-
-    init {
-        fetchArticles(selectedCategory)
-    }
+    var selectedCategory by mutableStateOf("entrepreneurship")
 
     fun fetchArticles(tag: String) {
+        selectedCategory = tag
         viewModelScope.launch {
             isLoading = true
             try {

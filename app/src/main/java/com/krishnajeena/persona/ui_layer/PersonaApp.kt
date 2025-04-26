@@ -15,6 +15,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
@@ -32,6 +37,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -64,6 +70,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -83,11 +90,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -105,9 +114,9 @@ import com.krishnajeena.persona.model.BlogUrlViewModel
 import com.krishnajeena.persona.model.CameraClickViewModel
 import com.krishnajeena.persona.model.CameraPhotoViewModel
 import com.krishnajeena.persona.model.CategoryBlogViewModel
+import com.krishnajeena.persona.model.QuoteViewModel
 import com.krishnajeena.persona.model.SharedViewModel
 import com.krishnajeena.persona.other.BottomNavItem
-
 import com.krishnajeena.persona.screens.DailyCameraScreen
 import com.krishnajeena.persona.screens.DismissBackground
 import com.krishnajeena.persona.screens.ExploreScreen
@@ -117,8 +126,6 @@ import com.krishnajeena.persona.screens.StudyScreen
 import com.krishnajeena.persona.screens.ToolsScreen
 import com.krishnajeena.persona.screens.WebViewItem
 import com.krishnajeena.persona.ui.theme.PersonaTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import soup.compose.photo.ExperimentalPhotoApi
 import soup.compose.photo.PhotoBox
@@ -129,7 +136,9 @@ import java.util.Date
 @RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPhotoApi::class)
 @Composable
-fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel()) {
+fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel(),
+               quoteViewModel: QuoteViewModel = hiltViewModel()
+) {
 
     var isDark by rememberSaveable { mutableStateOf(false) }
 
@@ -148,6 +157,10 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel()) {
             }
         }
 
+        LaunchedEffect(Unit) {
+            quoteViewModel.loadQuote(context)
+        }
+
         val pullOffset = remember { androidx.compose.animation.core.Animatable(0f) }
         val scope = rememberCoroutineScope()
 
@@ -161,13 +174,68 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel()) {
 // Apply this modifier to the Box or Column containing the pull effect
 
         var showPopup by remember { mutableStateOf(false) }
+        var showQuoteDialog by remember { mutableStateOf(false) }
+
+        if (showQuoteDialog) {
+            Dialog(onDismissRequest = { showQuoteDialog = false }) {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = scaleIn(tween(500)) + fadeIn(),
+                    exit = scaleOut(tween(500)) + fadeOut()
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White,
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .padding(16.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("🌞 Quote of the Day", style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(quoteViewModel.quoteText, style = MaterialTheme.typography.bodyMedium)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("- Persona", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+        }
+
+        var topBarWidth by remember { mutableStateOf(0) }
 
         Scaffold(
 
+
             topBar = {
                 TopAppBar(
-                    title = { Text(title) },
+                    modifier = Modifier.onGloballyPositioned { layoutCoordinates ->
+                        topBarWidth = layoutCoordinates.size.width
+                    },
+                    title = {
+
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                            Text(title,
+                                modifier = Modifier, maxLines = 1,)
+                            Box(modifier = Modifier.width(topBarWidth.dp),
+                                contentAlignment = Alignment.Center){
+                            IconButton(onClick = { showQuoteDialog = true }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.flash),
+                                    contentDescription = "Quote of the Day",
+                                    tint = Color(0xFFFF9800), // warm light color
+                                    modifier = Modifier.size(28.dp),
+                                )
+                            }
+                            }
+                        }
+                            },
                     actions = {
+
                         IconButton(onClick = { isDark = !isDark }) {
                             Icon(
                                 imageVector = if (isDark) Icons.Default.WbSunny else Icons.Default.DarkMode,

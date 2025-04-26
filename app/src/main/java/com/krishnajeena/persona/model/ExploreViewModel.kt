@@ -54,6 +54,9 @@ class ExploreViewModel(application: Application) : AndroidViewModel(application)
     var isLoading by mutableStateOf(true)
         private set
 
+    var firstSelected by mutableStateOf("entrepreneurship")
+        private set
+
     init {
         viewModelScope.launch {
             networkMonitor.isConnected.collect { connected ->
@@ -86,6 +89,7 @@ class ExploreViewModel(application: Application) : AndroidViewModel(application)
             try {
                 val response = RetrofitInstance.api.getArticlesCategories()
                 articlesCategories = response.articlesCategories
+                firstSelected = articlesCategories[0]
             } catch(e: Exception){
                 Log.e("API_ERROR", "Error fetching articles categories: ${e.message}")
             } finally{
