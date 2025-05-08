@@ -2,6 +2,7 @@ package com.krishnajeena.persona.ui_layer
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -157,8 +158,19 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel(),
             }
         }
 
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (!alarmManager.canScheduleExactAlarms()) {
+            // Prompt the user to allow exact alarms in settings
+            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                .setData(Uri.parse("package:" + context.packageName))
+            context.startActivity(intent)
+        }
+    }
+
         LaunchedEffect(Unit) {
-            quoteViewModel.loadQuote(context)
+            quoteViewModel.loadQuote()
         }
 
         val pullOffset = remember { androidx.compose.animation.core.Animatable(0f) }
@@ -460,6 +472,7 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel(),
         }
     }
 }
+
 
 @Composable
 fun CategoryClickedScreen(

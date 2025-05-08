@@ -54,7 +54,7 @@ class ExploreViewModel(application: Application) : AndroidViewModel(application)
     var isLoading by mutableStateOf(true)
         private set
 
-    var firstSelected by mutableStateOf("entrepreneurship")
+    var firstSelected by mutableStateOf("economy")
         private set
 
     init {

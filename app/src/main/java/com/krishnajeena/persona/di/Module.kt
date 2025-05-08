@@ -10,6 +10,7 @@ import com.krishnajeena.persona.data_layer.MusicRepository
 import com.krishnajeena.persona.data_layer.MusicRepositoryImpl
 import com.krishnajeena.persona.data_layer.NoteDatabase
 import com.krishnajeena.persona.model.MusicViewModel
+import com.krishnajeena.persona.other.QuoteRepository
 import com.krishnajeena.persona.services.MusicController
 import dagger.Module
 import dagger.Provides
@@ -20,6 +21,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Provides
+    fun provideContext(@ApplicationContext context: Context): Context {
+        return context
+    }
 
     @Provides
     @Singleton

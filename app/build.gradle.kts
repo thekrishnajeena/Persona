@@ -15,8 +15,8 @@ android {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
         targetSdk = 34
-        versionCode = 19
-        versionName = "3.2.3"
+        versionCode = 20
+        versionName = "3.3.3"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -72,6 +72,9 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.firebase.crashlytics.buildtools)
+    implementation(libs.androidx.hilt.common)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -88,7 +91,9 @@ implementation(libs.hilt.android.compiler)
     implementation(libs.hilt.navigation.compose)
 
 //
-    implementation("androidx.room:room-runtime:2.6.1")
+    implementation ("androidx.hilt:hilt-work:1.2.0")
+    kapt ("androidx.hilt:hilt-compiler:1.2.0")
+
 
     // To use Kotlin annotation processing tool (kapt)
 
@@ -169,6 +174,8 @@ implementation("com.google.accompanist:accompanist-permissions:0.32.0")
 
     implementation("io.ktor:ktor-client-android:2.3.4")
     implementation ("com.google.accompanist:accompanist-placeholder-material:0.34.0")
+
+
 
     implementation ("androidx.constraintlayout:constraintlayout-compose:1.1.1")
 }

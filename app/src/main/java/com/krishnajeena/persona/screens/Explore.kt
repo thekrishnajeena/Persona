@@ -1,6 +1,7 @@
 package com.krishnajeena.persona.screens
 
 import android.Manifest
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -56,18 +57,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.krishnajeena.persona.R
 import com.krishnajeena.persona.data_layer.BlogItem
 import com.krishnajeena.persona.model.ArticlesViewModel
 import com.krishnajeena.persona.model.ExploreViewModel
+import com.krishnajeena.persona.model.QuoteViewModel
 
 @Composable
 fun ExploreScreen(
     modifier: Modifier = Modifier,
     onCategoryClick: (List<BlogItem>, String) -> Unit,
-    navController: NavHostController
+    navController: NavHostController,
+    quoteViewModel: QuoteViewModel = hiltViewModel()
 ) {
     val viewModel: ExploreViewModel = hiltViewModel()
     val firstCategory = viewModel.firstSelected
@@ -88,30 +95,29 @@ fun ExploreScreen(
 
     val context = LocalContext.current
 
-
-
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (!isGranted) {
-            Toast.makeText(context, "Storage permission is required to access media files", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Notification permission needed to notify you about daily quote!", Toast.LENGTH_SHORT).show()
         }
     }
+
 
     LaunchedEffect(Unit) {
-        val permission = when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
-                Manifest.permission.READ_MEDIA_AUDIO
-            }
-            else -> {
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            }
-        }
 
-        if (ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
-            permissionLauncher.launch(permission)
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
     }
+
 
     Scaffold(modifier = modifier) { innerPadding ->
         Box(

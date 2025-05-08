@@ -32,6 +32,10 @@ cardview = "1.0.0"
 webkit = "1.12.1"
 media3Session = "1.5.1"
 firebaseCrashlyticsBuildtools = "3.0.3"
+hiltCommon = "1.2.0"
+workRuntimeKtx = "2.10.1"
+hiltWork = "1.2.0"
+startupRuntime = "1.2.0"
 
 
 [libraries]
@@ -81,6 +85,10 @@ pdf-viewer = { module = "io.github.afreakyelf:Pdf-Viewer", version.ref = "pdfVie
 photo-compose = { module = "io.github.fornewid:photo-compose", version.ref = "photoCompose" }
 androidx-media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3Session" }
 firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
+androidx-hilt-common = { group = "androidx.hilt", name = "hilt-common", version.ref = "hiltCommon" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
+androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltWork" }
+androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime", version.ref = "startupRuntime" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
