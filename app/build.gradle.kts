@@ -15,7 +15,7 @@ android {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
         targetSdk = 34
-        versionCode = 22
+        versionCode = 23
         versionName = "3.4.4"
         multiDexEnabled = true
 
