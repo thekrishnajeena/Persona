@@ -2,8 +2,6 @@
 <resources>
 
     <style name="Theme.Persona" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowSplashScreenBackground">@color/white</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">@color/white</item>
+
     </style>
 </resources>

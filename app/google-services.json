@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "138146477718",
+    "project_id": "persona-1be9a",
+    "storage_bucket": "persona-1be9a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:138146477718:android:ff952f669ac080ca0a34b7",
+        "android_client_info": {
+          "package_name": "com.krishnajeena.persona"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "138146477718-g8hif8biib5gpupmshc868h3kt33tdk1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.krishnajeena.persona",
+            "certificate_hash": "4289947c12188ffd11d4b8945eadbf60419bc2da"
+          }
+        },
+        {
+          "client_id": "138146477718-t9bel2o2v9ua8aaq78mlk7o24gqgoivs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKc00OvgsIJe9GM7SUJBFfHM9ClwE0zKw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "138146477718-t9bel2o2v9ua8aaq78mlk7o24gqgoivs.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

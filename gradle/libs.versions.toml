@@ -4,7 +4,7 @@ agp = "8.7.2"
 coilCompose = "2.4.0"
 hiltAndroid = "2.52"
 hiltNavigationComposeVersion = "1.2.0"
-kotlin = "1.8.10"
+kotlin = "2.0.21"
 coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -94,4 +94,5 @@ androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 google-dagger-hilt = { id = "com.google.dagger.hilt.android", version = "2.51.1"}
-
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

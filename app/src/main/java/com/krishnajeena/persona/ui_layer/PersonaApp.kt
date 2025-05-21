@@ -5,10 +5,15 @@ import android.app.Activity
 import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import android.view.View
+import android.view.ViewGroup
+import android.view.ViewTreeObserver
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
@@ -57,6 +62,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -75,10 +81,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -88,16 +96,22 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -127,6 +141,8 @@ import com.krishnajeena.persona.screens.StudyScreen
 import com.krishnajeena.persona.screens.ToolsScreen
 import com.krishnajeena.persona.screens.WebViewItem
 import com.krishnajeena.persona.ui.theme.PersonaTheme
+import dev.shreyaspatil.capturable.capturable
+import dev.shreyaspatil.capturable.controller.rememberCaptureController
 import kotlinx.coroutines.launch
 import soup.compose.photo.ExperimentalPhotoApi
 import soup.compose.photo.PhotoBox
@@ -135,10 +151,12 @@ import java.util.Date
 
 
 @RequiresApi(Build.VERSION_CODES.R)
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPhotoApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPhotoApi::class,
+    ExperimentalComposeUiApi::class, ExperimentalComposeApi::class
+)
 @Composable
 fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel(),
-               quoteViewModel: QuoteViewModel = hiltViewModel()
+               quoteViewModel: QuoteViewModel = hiltViewModel(),
 ) {
 
     var isDark by rememberSaveable { mutableStateOf(false) }
@@ -187,9 +205,9 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel(),
 
         var showPopup by remember { mutableStateOf(false) }
         var showQuoteDialog by remember { mutableStateOf(false) }
-
+        val captureController = rememberCaptureController()
         if (showQuoteDialog) {
-            Dialog(onDismissRequest = { showQuoteDialog = false }) {
+         Dialog(onDismissRequest = { showQuoteDialog = false }) {
                 AnimatedVisibility(
                     visible = true,
                     enter = scaleIn(tween(500)) + fadeIn(),
@@ -200,7 +218,7 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel(),
                         color = Color.White,
                         modifier = Modifier
                             .fillMaxWidth(0.9f)
-                            .padding(16.dp)
+                            .padding(16.dp).capturable(captureController)
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -208,9 +226,28 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel(),
                         ) {
                             Text("🌞 Quote of the Day", style = MaterialTheme.typography.titleMedium)
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(quoteViewModel.quoteText, style = MaterialTheme.typography.bodyMedium)
+                            Text(quoteViewModel.quoteText, style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center)
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("- Persona", style = MaterialTheme.typography.labelSmall)
+
+                            Row(modifier = Modifier,
+                                verticalAlignment = Alignment.CenterVertically){
+                                Text("- Persona", style = MaterialTheme.typography.labelSmall)
+                                IconButton(onClick = {
+                                    scope.launch {
+                                        val bitmapAsync = captureController.captureAsync()
+                                        try {
+                                            val bitmap = bitmapAsync.await()
+                                            val uri = saveBitmapToCacheAndGetUri(context, bitmap.asAndroidBitmap())
+                                            shareImageUri(context, uri)
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Something went wrong!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }){
+                                    Icon(imageVector = Icons.Filled.Share , contentDescription = "ShareQuote")
+                                }
+                            }
                         }
                     }
                 }
@@ -254,7 +291,10 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel(),
                                 contentDescription = "Toggle Theme"
                             )
                         }
-                        IconButton(onClick = { showPopup = true }) {
+                        IconButton(onClick = {
+
+                            showPopup = true
+                        }) {
                             Icon(
                                 imageVector = Icons.Default.AccountCircle,
                                 contentDescription = "Profile"
@@ -292,9 +332,12 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel(),
 
             NavHost(navController, startDestination = if(sharedText!=null)
                 BottomNavItem.Tools.route else BottomNavItem.Explore.route, modifier = Modifier
-                .padding(top=innerPadding.calculateTopPadding(),
+                .padding(
+                    top = innerPadding.calculateTopPadding(),
                     start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
-                    end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)).fillMaxSize()
+                    end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
+                )
+                .fillMaxSize()
             ) {
 
                 composable(BottomNavItem.Explore.route) { ExploreScreen(onCategoryClick = {
@@ -348,11 +391,13 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel(),
                                     items = clicksUri,
                                     key = { it.toString() } // Use a unique and stable key for each item
                                 ) { img ->
+                                    var showDelDialog by remember {mutableStateOf(false)}
+
                                     val dismissState = rememberSwipeToDismissBoxState(
                                         confirmValueChange = {
                                             when (it) {
                                                 SwipeToDismissBoxValue.StartToEnd -> {
-                                                    viewModel.removeImage(context, img)
+                                                    showDelDialog = true
                                                 }
 
                                                 else -> Unit
@@ -362,6 +407,16 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel(),
                                         positionalThreshold = { it * 0.25f }
                                     )
 
+                                    ConfirmDeleteDialog(
+                                        showDialog = showDelDialog,
+                                        onConfirm = {
+                                            showDelDialog = false
+                                            viewModel.removeImage(context, img)
+                                        },
+                                        onDismiss = {
+                                            showDelDialog = false
+                                        }
+                                    )
                                     SwipeToDismissBox(
                                         state = dismissState,
                                         modifier = Modifier,
@@ -473,6 +528,57 @@ fun PersonaApp(viewModel: CameraPhotoViewModel = viewModel(),
     }
 }
 
+fun shareImageUri(context: Context, uri: Uri) {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "image/png"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(intent, "Share Quote!"))
+}
+
+fun saveBitmapToCacheAndGetUri(context: Context, bitmap: Bitmap): Uri {
+    val file = File(context.cacheDir, "shared_image.png")
+    file.outputStream().use {
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+    }
+
+    return FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.provider",
+        file
+    )
+}
+
+@Composable
+fun ConfirmDeleteDialog(
+    showDialog: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(text = "Delete Item?")
+            },
+            text = {
+                Text("Are you sure you want to delete this image? This action cannot be undone.")
+            },
+            confirmButton = {
+                TextButton(onClick = onConfirm) {
+                    Text("Delete", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
 
 @Composable
 fun CategoryClickedScreen(
@@ -481,7 +587,9 @@ fun CategoryClickedScreen(
     navController: NavController
 ) {
 
-Column(modifier = Modifier.fillMaxSize().padding(16.dp)){
+Column(modifier = Modifier
+    .fillMaxSize()
+    .padding(16.dp)){
     Text(
         text = blogCatName,
         style = MaterialTheme.typography.headlineSmall,
@@ -499,16 +607,19 @@ Column(modifier = Modifier.fillMaxSize().padding(16.dp)){
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp).clickable{
+                    .padding(vertical = 8.dp)
+                    .clickable {
                         navController.navigate("webview/${Uri.encode(blog.url)}")
                     }
             ) {
-                Row(modifier = Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween,
+                Row(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically){
                 Column(
                     modifier = Modifier
-                        .padding(6.dp).
-                    fillMaxWidth(.75f)
+                        .padding(6.dp)
+                        .fillMaxWidth(.75f)
                 ) {
                     Text(
                         text = blog.title,
@@ -525,7 +636,9 @@ Column(modifier = Modifier.fillMaxSize().padding(16.dp)){
                     val context = LocalContext.current
 
                     val blogUrlViewModel = hiltViewModel<BlogUrlViewModel>()
-                    IconButton(modifier = Modifier.padding(2.dp).size(20.dp),
+                    IconButton(modifier = Modifier
+                        .padding(2.dp)
+                        .size(20.dp),
                         onClick = {
                         blogUrlViewModel.addUrl(blog.title, blog.url)
                         if(blogUrlViewModel.isAlreadyAdded(blog.url)){
@@ -635,7 +748,7 @@ fun BottomBar(navController: NavController, cameraClickViewModel: CameraClickVie
                 containerColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .offset(y = if(isGesture) (-42).dp else (-72).dp)
+                    .offset(y = if (isGesture) (-42).dp else (-72).dp)
                     .size(64.dp),
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(8.dp)
