@@ -22,7 +22,7 @@ class QuoteRepository @Inject constructor(
         return if (saved?.date == today) {
             saved
         } else {
-            val response = RetrofitClientQuote.instance.getQuoteOfTheDay()
+            val response = RetrofitClientQuote.getInstance().getQuoteOfTheDay()
             val newQuote = response.body()?.quote ?: "No quote available"
             val dailyQuote = DailyQuote(newQuote, today)
             saveQuote(dailyQuote)

@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
             calendar.add(Calendar.DAY_OF_YEAR, 1)
         }
 
-        alarmManager.setExactAndAllowWhileIdle(
+        alarmManager.setAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             calendar.timeInMillis,
             pendingIntent
