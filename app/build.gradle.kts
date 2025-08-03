@@ -14,9 +14,9 @@ android {
     defaultConfig {
         applicationId = "com.krishnajeena.persona"
         minSdk = 29
-        targetSdk = 34
-        versionCode = 26
-        versionName = "3.4.5"
+        targetSdk = 35
+        versionCode = 27
+        versionName = "3.4.6"
         multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

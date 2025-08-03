@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.app.ActivityCompat
@@ -63,11 +64,13 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.krishnajeena.persona.R
 import com.krishnajeena.persona.data_layer.BlogItem
 import com.krishnajeena.persona.model.ArticlesViewModel
 import com.krishnajeena.persona.model.ExploreViewModel
 import com.krishnajeena.persona.model.QuoteViewModel
+import java.util.Locale
 
 @Composable
 fun ExploreScreen(
@@ -207,7 +210,11 @@ fun ExploreScreen(
                                         .clickable { articlesViewModel.onCategoryClick(category) }
                                         .padding(horizontal = 16.dp, vertical = 8.dp)
                                 ) {
-                                    Text(category.capitalize(), color = Color.White)
+                                    Text(category.replaceFirstChar {
+                                        if (it.isLowerCase()) it.titlecase(
+                                            Locale.ROOT
+                                        ) else it.toString()
+                                    }, color = Color.White)
                                 }
                             }
                         }
@@ -248,9 +255,9 @@ fun ExploreScreen(
                                     }
                             ) {
                                 Column {
-                                    article.cover_image?.let { imageUrl ->
+                                    article.cover_image?.let {
                                         AsyncImage(
-                                            model = imageUrl,
+                                            model = it,
                                             contentDescription = null,
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier
@@ -258,6 +265,7 @@ fun ExploreScreen(
                                                 .height(180.dp)
                                         )
                                     }
+
 
                                     Column(modifier = Modifier.padding(16.dp)) {
                                         Text(article.title, fontWeight = FontWeight.Bold)

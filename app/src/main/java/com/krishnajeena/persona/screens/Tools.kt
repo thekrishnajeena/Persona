@@ -69,12 +69,13 @@ import kotlinx.coroutines.withContext
 fun ToolsScreen(modifier: Modifier = Modifier) {
         Column(modifier = modifier.fillMaxSize()
         ) {
-                Text("Video Downloader",
+                Text("Voice Memos",
                         fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Start,
                         modifier = Modifier.padding(6.dp)
                 )
-                VideoDownloaderScreen()
+//                VideoDownloaderScreen()
+                VoiceMemosScreen()
         }
 }
 @Composable

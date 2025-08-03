@@ -158,7 +158,9 @@ isWebOpen = false
                                         BookItem(book, booksViewModel, navController)
                                     }
                                 }
-                            }}
+                            }
+
+            }
 
                     }
 

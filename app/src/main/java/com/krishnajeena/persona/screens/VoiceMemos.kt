@@ -18,8 +18,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -89,7 +92,7 @@ fun VoiceMemosScreen() {
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
+                .padding(bottom = 160.dp)
                 .pointerInput(Unit) {
                     awaitPointerEventScope {
                         while (true) {
@@ -133,7 +136,7 @@ fun VoiceMemosScreen() {
             TooltipBox(
                 text = "Hold to record, release to stop",
                 modifier = Modifier.align(Alignment.BottomCenter)
-                    .padding(bottom = 96.dp)
+                    .padding(bottom = 180.dp)
             )
             LaunchedEffect(showTooltip) {
                 delay(2000)
@@ -164,8 +167,8 @@ fun RecordingsList(recordings: List<AudioFile>, modifier: Modifier = Modifier, o
     if(recordings.isEmpty()){
         Column(modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
-     AsyncImage(model = R.drawable._264828, contentDescription = "No Voice Memos!",
-         )
+//     AsyncImage(model = R.drawable._264828, contentDescription = "No Voice Memos!",)
+            Text("No recorded memos! Hold mic to record one.", fontSize = 18.sp)
         }
     }
     else {

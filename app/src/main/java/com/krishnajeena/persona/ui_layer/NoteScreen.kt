@@ -87,6 +87,7 @@ import kotlin.math.roundToInt
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.krishnajeena.persona.model.NoteViewModel
@@ -323,7 +324,8 @@ fun ZoomableCanvas(
                             Text(
                                 note.discription,
                                 fontSize = 7.sp,
-                                maxLines = 2,
+                                maxLines = 3,
+                                style = TextStyle(lineHeight = 12.sp),
                                 overflow = TextOverflow.Ellipsis
                             )
                             Spacer(modifier = Modifier.height(2.dp))
